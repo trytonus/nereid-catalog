@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tryton>
+    <data noupdate="1">
+    
+        <record id="catalog" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/Catalog</field>
+            <field name="endpoint">product.category.render_list</field>
+            <field name="sequence" eval="140" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="catalog_page" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/catalog/&lt;int:page&gt;</field>
+            <field name="endpoint">product.category.render_list</field>
+            <field name="sequence" eval="120" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="category_uri" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/category/&lt;uri&gt;</field>
+            <field name="endpoint">product.category.render</field>
+            <field name="sequence" eval="140" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>          
+
+        <record id="category_uri_page" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/category/&lt;uri&gt;/&lt;int:page&gt;</field>
+            <field name="endpoint">product.category.render</field>
+            <field name="sequence" eval="160" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="product_uri" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/product/&lt;uri&gt;</field>
+            <field name="endpoint">product.product.render</field>
+            <field name="sequence" eval="180" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="product_path_uri" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/product/&lt;path:path&gt;/&lt;uri&gt;</field>
+            <field name="endpoint">product.product.render</field>
+            <field name="sequence" eval="200" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="products" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/products</field>
+            <field name="endpoint">product.product.render_list</field>
+            <field name="sequence" eval="210" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>          
+
+        <record id="products_page" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/products/&lt;page&gt;</field>
+            <field name="endpoint">product.product.render_list</field>
+            <field name="sequence" eval="220" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="quick_search" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/search</field>
+            <field name="endpoint">product.product.quick_search</field>
+            <field name="sequence" eval="230" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+    </data>
+</tryton>

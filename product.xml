@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <!--
+        This file is part of Tryton & Nereid. The COPYRIGHT file at the
+        top level of this repository contains the full copyright notices
+        and license terms.
+    -->
+<tryton>
+    <data>
+
+        <record model="ir.ui.view" id="category_view_form_nereid">
+            <field name="model">product.category</field>
+            <field name="inherit" ref="product.category_view_form" />
+            <field name="arch" type="xml">
+                <![CDATA[
+                <data>
+                    <xpath
+                        expr="/form/notebook/page[@id=&quot;childs&quot;]"
+                        position="after">
+                        <page string="E-Commerce Details" col="4" id="ecomm_det">
+                            <label name="displayed_on_eshop"/>
+                            <field name="displayed_on_eshop"/>
+							<label name="uri"/>
+                            <field name="uri"/>
+                            <button name="update_uri" type="object" 
+                                string="Update URI" colspan="2"/>
+                            <label name="image"/>
+                            <field name="image"/>
+                            <newline />
+                            <separator 
+                                colspan="2" 
+                                string="Sites"
+                                id="sepr_sites"/>
+                            <separator 
+                                colspan="2" 
+                                string="Description"
+                                id="sepr_desc"/>
+                            <field name="sites" colspan="2"/>
+                            <field name="description" colspan="2"/>
+                        </page>
+                    </xpath>
+                </data>
+                ]]>
+            </field>
+        </record>
+        
+        <record model="ir.ui.view" id="product_view_form_nereid">
+            <field name="model">product.product</field>
+            <field name="inherit" ref="product.product_view_form" />
+            <field name="arch" type="xml">
+                <![CDATA[
+                <data>
+                    <xpath
+                        expr="/form/notebook/page[@id=&quot;general&quot;]"
+                        position="after">
+                        <page string="E-Commerce Details" 
+                                col="4" id="ecomm_det">
+                            <label name="displayed_on_eshop"/>
+                            <field name="displayed_on_eshop"/>
+                            <group id="e_fields" states="{'invisible': Not(Bool(Eval('displayed_on_eshop')))}" col="4" colspan="4">
+                              <label name="uri"/>
+                              <field name="uri"/>
+                              <newline />
+                              <notebook colspan="4" >
+                                <page string="Related Products" col="4" 
+                                  id="related_products" >
+                                  <separator 
+                                    colspan="4" 
+                                    string="Up-Sells" 
+                                    id="sepr_up_sells"/>
+                                  <field name="up_sells" colspan="4" />
+                                  <newline />
+                                  <separator 
+                                    colspan="4" 
+                                    string="Cross-Sells" 
+                                    id="sepr_cross_sells"/>
+                                  <field name="cross_sells" colspan="4" />
+                                </page>
+                                <page string="Images" id="images" >
+                                  <group col="1" colspan="3" string="Gallery" id="gallery">
+                                    <field name="images"/>
+                                  </group>
+                                  <group col="1" colspan="1" string="Thumbnail" id="thumbnail">
+                                    <field name="thumbnail" colspan="1"/>
+                                  </group>
+                                </page>
+                                <page string="Additional Info" id="addl_info" >
+                                  <separator 
+                                    colspan="4" 
+                                    string="Additional Categories" 
+                                    id="sepr_addl_categs"/>
+                                  <field name="additional_categories" colspan="4"/>
+                                  <separator 
+                                    colspan="4" 
+                                    string="Wishlist" 
+                                    id="sepr_wishlist"/>
+                                  <field name="wishlist" colspan="4"/>
+                                </page>
+                              </notebook>
+                            </group>
+                        </page>
+                    </xpath>
+                </data>
+                ]]>
+            </field>
+        </record>
+        
+        <record model="ir.ui.view" id="party_address_view_form_wishlist">
+            <field name="model">party.address</field>
+            <field name="type">form</field>
+            <field name="inherit" ref="party.address_view_form"/>
+            <field name="arch" type="xml">
+                <![CDATA[
+                <data>
+                    <xpath expr="/form/button[@name=&quot;create_web_account&quot;]" 
+                                                        position="after">
+                        <newline/>
+                        <separator 
+                        colspan="4" 
+                        string="Wishlist" 
+                        id="sepr_wishlist"/>
+                        <field name="wishlist" colspan="4"/>
+                    </xpath>
+                </data>
+                ]]>
+            </field>
+        </record>
+
+        <!-- Model Access -->
+        <record model="ir.model.access" id="access_product">
+            <field name="model" search="[('model', '=', 'product.product')]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+        <record model="ir.model.access" id="access_product_nereid_admin">
+            <field name="model" search="[('model', '=', 'product.product')]"/>
+            <field name="group" ref="nereid.group_nereid_admin"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+        <record model="ir.model.access" id="access_product_category">
+            <field name="model" search="[('model', '=', 'product.category')]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+        <record model="ir.model.access" id="access_product_category_nereid_admin">
+            <field name="model" search="[('model', '=', 'product.category')]"/>
+            <field name="group" ref="nereid.group_nereid_admin"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+
+        <record id="inherit_nereid_website_product" model="ir.ui.view">
+            <field name="model">nereid.website</field>
+            <field name="inherit" ref="nereid.website_view_form"/>
+            <field name="arch" type="xml">
+                <![CDATA[
+                <data>
+                    <xpath expr="/form/notebook" position="inside">
+                        <page string="Catalog Config." id="catalog">
+                            <label name="product_template" />
+                            <field name="product_template" />
+                            <label name="category_template" />
+                            <field name="category_template" />
+                            <separator name="categories" colspan="4"/>
+                            <field name="categories" colspan="4"/>
+                            <separator name="exclude_products" colspan="4"/>
+                            <field name="exclude_products" colspan="4"/>
+                        </page>
+                        <page string="Currencies" id="currencies">
+                           <field name="currencies"/>
+                        </page>
+                    </xpath>
+                </data>
+                ]]>
+            </field>
+        </record>
+
+        <record model="nereid.template.context_processor" id="ctx_processor_category">
+            <field name="method">product.category.context_processor</field>
+        </record>
+
+    </data>
+</tryton>
