@@ -104,6 +104,8 @@ class Product(ModelSQL, ModelView):
 
         :param product_id: the product id to prepend to the list
         """
+        if not hasattr(session, sid):
+            return None
         cache_key = 'product.product._add_to_recent_products' + session.sid
         recent_products = deque(
             cache.get(cache_key) or [], self.recent_list_size)
