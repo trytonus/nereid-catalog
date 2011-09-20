@@ -65,5 +65,19 @@
             <field name="url_map" ref="nereid.default_url_map" />
         </record>
 
+        <record id="product_sitemap_index" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/sitemaps/product-index.xml</field>
+            <field name="endpoint">product.product.sitemap_index</field>
+            <field name="sequence" eval="240" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="product_sitemap_section" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/sitemaps/product-&lt;int:page&gt;.xml</field>
+            <field name="endpoint">product.product.sitemap</field>
+            <field name="sequence" eval="250" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
     </data>
 </tryton>

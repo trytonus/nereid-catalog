@@ -6,7 +6,7 @@ from collections import deque
 from nereid import render_template, cache, redirect, jsonify
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, login_required, url_for, \
-    Pagination
+    Pagination, SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound, abort
 
 from trytond.model import ModelView, ModelSQL, fields
@@ -219,6 +219,22 @@ class Product(ModelSQL, ModelView):
         in xml code
         """
         return {'get_sale_price': self.sale_price}
+
+    def sitemap_index(self):
+        index = SitemapIndex(self, [('displayed_on_eshop', '=', True)])
+        index.limit = 5000
+        return index.render()
+
+    def sitemap(self, page):
+        sitemap_section = SitemapSection(
+            self, [('displayed_on_eshop', '=', True)], page)
+        sitemap_section.changefreq = 'daily'
+        sitemap_section.limit = 5000
+        return sitemap_section.render()
+
+    def get_absolute_url(self, product, **kwargs):
+        return url_for(
+            'product.product.render', uri=product.uri, **kwargs)
 
 Product()
 
