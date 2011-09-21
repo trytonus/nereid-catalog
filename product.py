@@ -143,7 +143,6 @@ class Product(ModelSQL, ModelView):
         :param product: ID of product
         :param quantity: Quantity
         """
-        currency_obj = self.pool.get('currency.currency')
         price_list = request.nereid_user.party.sale_price_list.id if \
             request.nereid_user.party.sale_price_list else None
 
@@ -154,12 +153,6 @@ class Product(ModelSQL, ModelView):
             guest_user = address_obj.browse(current_app.guest_user)
             price_list = guest_user.party.sale_price_list.id if \
                 guest_user.party.sale_price_list else None
-
-        # Neither users have a pricelist
-        if price_list is None:
-            product_obj = self.pool.get('product.product')
-            product_record = product_obj.browse(product)
-            price = product_record.list_price
 
         # Build a Cache key to store in cache
         cache_key = key_from_list([
@@ -175,13 +168,11 @@ class Product(ModelSQL, ModelView):
             # There is a valid pricelist, now get the price
             with Transaction().set_context(
                     customer = request.nereid_user.party.id, 
-                    price_list = price_list):
-                price = self.get_sale_price([product], quantity)[product]
+                    price_list = price_list,
+                    currency = request.nereid_currency.id):
+                rv = self.get_sale_price([product], quantity)[product]
 
             # Now convert the price to the session currency
-            rv = currency_obj.compute(
-                request.nereid_website.company.currency.id,     # From
-                price, request.nereid_currency.id)
             cache.set(cache_key, rv, 60 * 5)
         return rv
 
