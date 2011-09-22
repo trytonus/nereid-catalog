@@ -6,7 +6,7 @@ from collections import deque
 from nereid import render_template, cache, redirect, jsonify
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, login_required, url_for, \
-    Pagination, SitemapIndex, SitemapSection
+    Pagination, SitemapIndex, SitemapSectionSQL
 from werkzeug.exceptions import NotFound, abort
 
 from trytond.model import ModelView, ModelSQL, fields
@@ -226,8 +226,10 @@ class Product(ModelSQL, ModelView):
         return index.render()
 
     def sitemap(self, page):
-        sitemap_section = SitemapSection(
-            self, [('displayed_on_eshop', '=', True)], page)
+        sitemap_section = SitemapSectionSQL(self, 
+            """SELECT id FROM
+            product_product WHERE
+            displayed_on_eshop = true""", page)
         sitemap_section.changefreq = 'daily'
         sitemap_section.limit = 1000
         return sitemap_section.render()
