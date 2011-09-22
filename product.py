@@ -222,14 +222,14 @@ class Product(ModelSQL, ModelView):
 
     def sitemap_index(self):
         index = SitemapIndex(self, [('displayed_on_eshop', '=', True)])
-        index.limit = 5000
+        index.limit = 1000
         return index.render()
 
     def sitemap(self, page):
         sitemap_section = SitemapSection(
             self, [('displayed_on_eshop', '=', True)], page)
         sitemap_section.changefreq = 'daily'
-        sitemap_section.limit = 5000
+        sitemap_section.limit = 1000
         return sitemap_section.render()
 
     def get_absolute_url(self, product, **kwargs):
