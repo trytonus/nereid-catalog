@@ -29,7 +29,7 @@ class Product(ModelSQL, ModelView):
     #: increasing this number would increase the payload of the session
     recent_list_size = 5
 
-    uri = fields.Char('URI', select=True, on_change_with=['name', 'uri'],
+    uri = fields.Char('URI', select=1, on_change_with=['name', 'uri'],
         states=DEFAULT_STATE2)
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?')
 
