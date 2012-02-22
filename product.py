@@ -3,17 +3,16 @@
 "Products catalogue display"
 from collections import deque
 
-from nereid import render_template, cache, redirect, jsonify
+from nereid import render_template, cache
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, login_required, url_for, \
-    Pagination, SitemapIndex, SitemapSection
-from werkzeug.exceptions import NotFound, abort
+    Pagination, SitemapIndex, SitemapSection, jsonify
+from werkzeug.exceptions import NotFound
 
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 
-DEFAULT_DOMAIN = [('displayed_on_eshop', '=', True)]
 DEFAULT_STATE = {'invisible': Not(Bool(Eval('displayed_on_eshop')))}
 DEFAULT_STATE2 = {
     'invisible': Not(Bool(Eval('displayed_on_eshop'))),
@@ -25,28 +24,24 @@ class Product(ModelSQL, ModelView):
     "Product extension for Nereid"
     _name = "product.product"
 
-    #: Decides the number of products that would be remebered. Remember that
-    #: increasing this number would increase the payload of the session
-    recent_list_size = 5
-
     uri = fields.Char('URI', select=1, on_change_with=['name', 'uri'],
         states=DEFAULT_STATE2)
-    displayed_on_eshop = fields.Boolean('Displayed on E-Shop?')
+    displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=1)
 
     thumbnail = fields.Many2One('nereid.static.file', 'Thumbnail', 
         states=DEFAULT_STATE)
     images = fields.Many2Many('product.product-nereid.static.file',
-            'product', 'image', 'Image Gallery', states=DEFAULT_STATE)
+        'product', 'image', 'Image Gallery', states=DEFAULT_STATE)
     up_sells = fields.Many2Many('product.product-product.product',
-            'product', 'up_sell', 'Up-Sells', states=DEFAULT_STATE)
+        'product', 'up_sell', 'Up-Sells', states=DEFAULT_STATE)
     cross_sells = fields.Many2Many('product.product-product.product',
-            'product', 'cross_sell', 'Cross-Sells', states=DEFAULT_STATE)
+        'product', 'cross_sell', 'Cross-Sells', states=DEFAULT_STATE)
 
     additional_categories = fields.Many2Many(
-            'product.product-product.category', 'product', 'category',
-            'Additional Categories')
-    wishlist = fields.Many2Many('product.product-party.address',
-            'product', 'address', 'Wishlist')
+        'product.product-product.category', 'product', 'category',
+        'Additional Categories')
+    wishlist = fields.Many2Many('product.product-nereid.user',
+        'product', 'user', 'Wishlist')
 
     #TODO: Create a functional many2many field for the sites 
 
@@ -69,61 +64,133 @@ class Product(ModelSQL, ModelView):
             return {}
 
     def render(self, uri):
-        """Renders the template for a signle product.
+        """Renders the template for a single product.
 
         :param uri: URI of the product
         """
-        allowed_categories = [c.id for c in request.nereid_website.categories]
-        excl_products = [p.id for p in request.nereid_website.exclude_products]
-        product_ids = self.search(
-            DEFAULT_DOMAIN + [
-                ('uri', '=', uri), 
-                ('category', 'in', allowed_categories),
-                ('id', 'not in', excl_products)
-                ]
-            )
+        product_ids = self.search([
+            ('displayed_on_eshop', '=', True),
+            ('uri', '=', uri), 
+            ('category', 'in', request.nereid_website.get_categories()),
+            ]
+        )
         if not product_ids:
             return NotFound('Product Not Found')
+
         # if only one product is found then it is rendered and 
         # if more than one are found then the first one is rendered
         product = self.browse(product_ids[0])
         self._add_to_recent_list(product_ids[0])
         return render_template('product.jinja', product=product)
 
+    #: Decides the number of products that would be remebered. 
+    recent_list_size = 5
+
+    #: The list of fields allowed to be sent back on a JSON response from the
+    #: application. This is validated before any product info is built
+    #:
+    #: The `name`, `sale_price`, `id` and `uri` are sent by default
+    #:
+    #: .. versionadded:: 0.3
+    json_allowed_fields = [
+        'name', 'sale_price', 'id', 'uri'
+    ]
+
+    def recent_products(self):
+        """
+        GET
+        ---
+        
+        Return a list of recently visited products in JSON
+
+        POST
+        ----
+
+        Add the product to the recent list manually. This method is required
+        if the product page is cached, or is served by a Caching Middleware
+        like Varnish which may clear the session before sending the request to
+        Nereid.
+
+        Just as with GET the response is the AJAX of recent products
+        """
+        if request.method == 'POST':
+            self._add_to_recent_list(request.form.get('product_id', type=int))
+
+        fields = request.args.getlist('fields')
+        if fields:
+            allowed_fields = [
+                f for f in fields if f in self.json_allowed_fields
+            ]
+        else:
+            allowed_fields = self.json_allowed_fields[:]
+        products = []
+
+        if 'sale_price' in allowed_fields:
+            allowed_fields.remove('sale_price')
+
+        if hasattr(session, 'sid'):
+            product_ids = session.get('recent-products', [])
+            products = self.read(product_ids, allowed_fields)
+            for product in products:
+                product['sale_price'] = str(self.sale_price(product['id']))
+
+        return jsonify(
+            products = products
+        )
+
     def _add_to_recent_list(self, product_id):
         """Adds the given product ID to the list of recently viewed products
         By default the list size is 5. To change this you can inherit
-        product.product and set recent_list_size attribute to an non negative
-        integer value
+        product.product and set :attr:`recent_list_size` attribute to a 
+        non negative integer value
 
-        for faster and easier access the products are stored with the ids alone
+        For faster and easier access the products are stored with the ids alone
         this behaviour can be modified by subclassing.
 
         The deque object cannot be saved directly in the cache as its not
-        serialisable
+        serialisable. Hence a conversion to list is made on the fly
+
+        .. versionchanged:: 0.3
+            If there is no session for the user this function returns an empty
+            list. This ensures that the code is consistent with iterators that
+            may use the returned value
 
         :param product_id: the product id to prepend to the list
         """
         if not hasattr(session, 'sid'):
-            return None
-        cache_key = 'product.product._add_to_recent_products' + session.sid
+            current_app.logger.warning(
+                "No session. Not saving to browsing history"
+            )
+            return []
+
         recent_products = deque(
-            cache.get(cache_key) or [], self.recent_list_size)
+            session.setdefault('recent-products', []), self.recent_list_size
+        )
         if product_id not in recent_products:
             recent_products.appendleft(product_id)
-            cache.set(cache_key, list(recent_products), 10 * 24 * 60 * 60)
+            session['recent-products'] = list(recent_products)
+        return recent_products
 
     def render_list(self, page=1):
         """
         Renders the list of all products which are displayed_on_shop=True
+
+        .. tip::
+
+            The implementation uses offset for pagination and could be 
+            extremely resource intensive on databases. Hence you might want to
+            either have an alternate cache/search server based pagination or
+            limit the pagination to a maximum page number.
+
+            The base implementation does NOT limit this and could hence result
+            in poor performance
+
+        :param page: The page in pagination to be displayed
         """
-        allowed_categories = [c.id for c in request.nereid_website.categories]
-        excl_products = [p.id for p in request.nereid_website.exclude_products]
-        products = Pagination(self,
-            DEFAULT_DOMAIN + [
-                ('category', 'in', allowed_categories),
-                ('id', 'not in', excl_products)
-                ], page, self.per_page)
+        products = Pagination(self, [
+            ('displayed_on_eshop', '=', True),
+            ('category', 'in', request.nereid_website.get_categories()),
+        ], page, self.per_page)
         return render_template(request.nereid_website.category_template.name, 
             products = products)
 
@@ -143,38 +210,8 @@ class Product(ModelSQL, ModelView):
         :param product: ID of product
         :param quantity: Quantity
         """
-        price_list = request.nereid_user.party.sale_price_list.id if \
-            request.nereid_user.party.sale_price_list else None
-
-        # If the regsitered user does not have a pricelist try for
-        # the pricelist of guest user
-        if not request.is_guest_user and price_list is None:
-            address_obj = self.pool.get('party.address')
-            guest_user = address_obj.browse(current_app.guest_user)
-            price_list = guest_user.party.sale_price_list.id if \
-                guest_user.party.sale_price_list else None
-
-        # Build a Cache key to store in cache
-        cache_key = key_from_list([
-            Transaction().cursor.dbname,
-            Transaction().user,
-            request.nereid_user.party.id,
-            price_list, product, quantity,
-            request.nereid_currency.id,
-            'product.product.sale_price',
-            ])
-        rv = cache.get(cache_key)
-        if rv is None:
-            # There is a valid pricelist, now get the price
-            with Transaction().set_context(
-                    customer = request.nereid_user.party.id, 
-                    price_list = price_list,
-                    currency = request.nereid_currency.id):
-                rv = self.get_sale_price([product], quantity)[product]
-
-            # Now convert the price to the session currency
-            cache.set(cache_key, rv, 60 * 5)
-        return rv
+        product = self.browse(product)
+        return product.list_price
 
     @login_required
     def add_to_wishlist(self):
@@ -191,14 +228,11 @@ class Product(ModelSQL, ModelView):
         """
         page = int(request.args.get('page', 1))
         query = request.args.get('q', '')
-        allowed_categories = request.nereid_website.get_categories()
-        excl_products = request.nereid_website.get_exclude_products()
-        products = Pagination(self,
-            DEFAULT_DOMAIN + [
-                ('category', 'in', allowed_categories),
-                ('id', 'not in', excl_products),
-                ('name', 'ilike', '%' + query + '%'),
-                ], page, self.per_page)
+        products = Pagination(self, [
+            ('displayed_on_eshop', '=', True),
+            ('category', 'in', request.nereid_website.get_categories()),
+            ('name', 'ilike', '%' + query + '%'),
+        ], page, self.per_page)
         return render_template('search-results.jinja', products = products)
 
     def context_processor(self):
@@ -212,11 +246,20 @@ class Product(ModelSQL, ModelView):
         return {'get_sale_price': self.sale_price}
 
     def sitemap_index(self):
-        index = SitemapIndex(self, [('displayed_on_eshop', '=', True)])
+        index = SitemapIndex(self, [
+            ('displayed_on_eshop', '=', True),
+            ('category', 'in', request.nereid_website.get_categories())
+            ]
+        )
         return index.render()
 
     def sitemap(self, page):
-        sitemap_section = SitemapSection(self, [('displayed_on_eshop', '=', True)], page)
+        sitemap_section = SitemapSection(
+            self, [
+                ('displayed_on_eshop', '=', True),
+                ('category', 'in', request.nereid_website.get_categories())
+            ], page
+        )
         sitemap_section.changefreq = 'daily'
         return sitemap_section.render()
 
@@ -259,20 +302,20 @@ class ProductCategories(ModelSQL):
 ProductCategories()
 
 
-class ProductAddress(ModelSQL):
+class ProductUser(ModelSQL):
     "Product Wishlist"
-    _name = 'product.product-party.address'
-    _table = 'product_address_rel'
+    _name = 'product.product-nereid.user'
+    _table = 'product_user_rel'
     _description = __doc__
 
     product = fields.Many2One(
         'product.product', 'Product', 
         ondelete='CASCADE', select=1, required=True)
-    address = fields.Many2One(
-        'party.address', 'Address', 
+    user = fields.Many2One(
+        'nereid.user', 'User', 
         ondelete='CASCADE', select=1, required=True)
 
-ProductAddress()
+ProductUser()
 
 
 class ProductsRelated(ModelSQL):
@@ -349,25 +392,21 @@ class ProductCategory(ModelSQL, ModelView):
         Renders the template
         """
         product_obj = self.pool.get('product.product')
-        category_ids = self.search(
-            DEFAULT_DOMAIN + [
-                ('uri', '=', uri),
-                ('sites', '=', request.nereid_website.id)
-                ]
-            )
+        category_ids = self.search([
+            ('displayed_on_eshop', '=', True),
+            ('uri', '=', uri),
+            ('sites', '=', request.nereid_website.id)
+        ])
         if not category_ids:
             return NotFound('Product Category Not Found')
 
         # if only one product is found then it is rendered and 
         # if more than one are found then the first one is rendered
         category = self.browse(category_ids[0])
-        excl_products = [p.id for p in request.nereid_website.exclude_products]
-        products = Pagination(product_obj,
-            DEFAULT_DOMAIN + [
-                ('category', '=', category.id),
-                ('id', 'not in', excl_products)
-                ],
-            page=page, per_page=self.per_page, error_out=False)
+        products = Pagination(product_obj, [
+            ('displayed_on_eshop', '=', True),
+            ('category', '=', category.id),
+        ], page=page, per_page=self.per_page)
         return render_template('category.jinja', category=category, 
             products=products,)
 
@@ -375,9 +414,10 @@ class ProductCategory(ModelSQL, ModelView):
         """
         Renders the list of all categories which are displayed_on_shop=True
         """
-        categories = Pagination(self,
-            DEFAULT_DOMAIN + [('sites', '=', request.nereid_website.id)], 
-            page, self.per_page)
+        categories = Pagination(self, [
+            ('displayed_on_eshop', '=', True),
+            ('sites', '=', request.nereid_website.id),
+        ], page, self.per_page)
         return render_template(
             request.nereid_website.category_template.name, 
             categories=categories)
@@ -385,18 +425,18 @@ class ProductCategory(ModelSQL, ModelView):
     def get_categories(self, page=1):
         """Return list of categories
         """
-        return Pagination(self,
-            DEFAULT_DOMAIN + 
-            [('sites', '=', request.nereid_website.id)],
-            page, self.per_page)
+        return Pagination(self, [
+            ('displayed_on_eshop', '=', True),
+            ('sites', '=', request.nereid_website.id)
+        ], page, self.per_page)
 
     def get_root_categories(self, page=1):
         """Return list of Root Categories."""
-        return Pagination(self,
-            DEFAULT_DOMAIN + [
-                ('sites', '=', request.nereid_website.id),
-                ('parent', '=', False),
-                ], page, self.per_page)
+        return Pagination(self, [
+            ('displayed_on_eshop', '=', True),
+            ('sites', '=', request.nereid_website.id),
+            ('parent', '=', False),
+        ], page, self.per_page)
 
     def context_processor(self):
         """This function will be called by nereid to update
@@ -420,6 +460,29 @@ class ProductCategory(ModelSQL, ModelView):
         full_name.replace('/', '-')
         return slugify(full_name)
 
+    def sitemap_index(self):
+        index = SitemapIndex(self, [
+            ('displayed_on_eshop', '=', True),
+            ('id', 'in', request.nereid_website.get_categories())
+            ]
+        )
+        return index.render()
+
+    def sitemap(self, page):
+        sitemap_section = SitemapSection(
+            self, [
+                ('displayed_on_eshop', '=', True),
+                ('id', 'in', request.nereid_website.get_categories())
+            ], page
+        )
+        sitemap_section.changefreq = 'daily'
+        return sitemap_section.render()
+
+    def get_absolute_url(self, category, **kwargs):
+        return url_for(
+            'product.category.render', uri=category.uri, **kwargs
+        )
+
 ProductCategory()
 
 
@@ -433,12 +496,7 @@ class WebSite(ModelSQL, ModelView):
     categories = fields.Many2Many(
         'nereid.website-product.category',
         'website', 'category', 'Categories Displayed on E-Shop',
-        domain=DEFAULT_DOMAIN)
-    exclude_products = fields.Many2Many(
-        'nereid.website-product.product',
-        'website', 'product', 'Products Excluded from E-Shop',
-        depends=['categories'], domain=[
-            ('category', 'in', Eval('categories'))] + DEFAULT_DOMAIN)
+        domain=[('displayed_on_eshop', '=', True)])
 
     product_template = fields.Many2One(
        'nereid.template', 'Product List Template', required=True)
@@ -451,7 +509,8 @@ class WebSite(ModelSQL, ModelView):
         cache_key = key_from_list([
             Transaction().cursor.dbname,
             Transaction().user,
-            'nereid.website.get_categories'
+            'nereid.website.get_categories',
+            request.nereid_website.id,
             ])
         rv = cache.get(cache_key)
         if rv is None:
@@ -459,54 +518,26 @@ class WebSite(ModelSQL, ModelView):
             cache.set(cache_key, rv, 60 * 60)
         return rv
 
-    def get_exclude_products(self):
-        """Returns the ids of the excluded products
-        """
-        cache_key = key_from_list([
-            Transaction().cursor.dbname,
-            Transaction().user,
-            'nereid.website.get_excluded_products'
-            ])
-        rv = cache.get(cache_key)
-        if rv is None:
-            rv = [x.id for x in request.nereid_website.exclude_products]
-            cache.set(cache_key, rv, 60 * 60)
-        return rv
-
 WebSite()
 
 
-class PartyAddress(ModelSQL, ModelView):
-    """Extend Party Address to have product wishlist"""
-    _name = 'party.address'
+class NereidUser(ModelSQL, ModelView):
+    """Extend User to have product wishlist"""
+    _name = 'nereid.user'
 
-    wishlist = fields.Many2Many('product.product-party.address',
-            'address', 'product', 'Wishlist')
+    wishlist = fields.Many2Many(
+        'product.product-nereid.user', 'user', 'product', 'Wishlist'
+    )
 
     @login_required
     def render_wishlist(self):
-        """Render a template with the items in wishlist
+        """
+        Render a template with the items in wishlist
         """
         return render_template('wishlist.jinja', 
             products=request.nereid_user.wishlist)
 
-PartyAddress()
-
-
-class WebsiteProduct(ModelSQL):
-    "Products to be displayed on a website"
-    _name = 'nereid.website-product.product'
-    _table = 'website_product_rel'
-    _description = __doc__
-
-    website = fields.Many2One(
-        'nereid.website', 'Website', 
-        ondelete='CASCADE', select=1, required=True)
-    product = fields.Many2One(
-        'product.product', 'Product', 
-        ondelete='CASCADE', select=1, required=True)
-
-WebsiteProduct()
+NereidUser()
 
 
 class WebsiteCategory(ModelSQL):

@@ -30,6 +30,14 @@
             <field name="url_map" ref="nereid.default_url_map" />
         </record>
 
+        <record id="product_recent" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/products/+recent</field>
+            <field name="endpoint">product.product.recent_products</field>
+            <field name="methods">("GET", "POST")</field>
+            <field name="sequence" eval="175" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
         <record id="product_uri" model="nereid.url_rule">
             <field name="rule">/&lt;language&gt;/product/&lt;uri&gt;</field>
             <field name="endpoint">product.product.render</field>
@@ -75,6 +83,20 @@
         <record id="product_sitemap_section" model="nereid.url_rule">
             <field name="rule">/&lt;language&gt;/sitemaps/product-&lt;int:page&gt;.xml</field>
             <field name="endpoint">product.product.sitemap</field>
+            <field name="sequence" eval="250" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="category_sitemap_index" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/sitemaps/category-index.xml</field>
+            <field name="endpoint">product.category.sitemap_index</field>
+            <field name="sequence" eval="240" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="category_sitemap_section" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/sitemaps/category-&lt;int:page&gt;.xml</field>
+            <field name="endpoint">product.category.sitemap</field>
             <field name="sequence" eval="250" />
             <field name="url_map" ref="nereid.default_url_map" />
         </record>
