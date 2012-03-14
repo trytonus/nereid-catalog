@@ -171,8 +171,6 @@
                             <field name="category_template" />
                             <separator name="categories" colspan="4"/>
                             <field name="categories" colspan="4"/>
-                            <separator name="exclude_products" colspan="4"/>
-                            <field name="exclude_products" colspan="4"/>
                         </page>
                         <page string="Currencies" id="currencies">
                            <field name="currencies"/>
