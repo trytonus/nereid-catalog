@@ -22,10 +22,12 @@ class TestCatalog(TestCase):
     def setUpClass(cls):
         super(TestCatalog, cls).setUpClass()
         testing_proxy.install_module('nereid_catalog')
-        
+ 
         with Transaction().start(testing_proxy.db_name, 1, None) as txn:
             company = testing_proxy.create_company('Test Company')
             cls.guest_user = testing_proxy.create_guest_user(company=company)
+            cls.regd_user = testing_proxy.create_user_party('Registered User', 
+                'email@example.com', 'password', company=company)
 
             testing_proxy.create_template(
                 'category.jinja', 
@@ -35,13 +37,21 @@ class TestCatalog(TestCase):
                 'search-results.jinja', 
                 '{% for product in products %}|{{ product.name }}|{% endfor %}'
             )
+            testing_proxy.create_template(
+                'login.jinja', 
+                '{{ login_form.errors }} {{get_flashed_messages()}}'
+            )
             category_template = testing_proxy.create_template(
                 'category-list.jinja', 
                 '{% for product in products %}|{{ product.name }}|{% endfor %}'
             )
             product_template = testing_proxy.create_template(
                 'product.jinja', '{{ product.sale_price(product.id) }}'
-            )            
+            )
+            wishlist_template = testing_proxy.create_template(
+                'wishlist.jinja',
+                '{% for product in products %}|{{ product.uri }}|{% endfor %}'
+            )
             category = testing_proxy.create_product_category(
                 'Category', uri='category'
             )
@@ -55,7 +65,8 @@ class TestCatalog(TestCase):
             cls.site = testing_proxy.create_site('testsite.com', 
                 category_template=category_template,
                 product_template=product_template,
-                categories=[('set', [category, category2])]
+                categories=[('set', [category, category2])],
+                guest_user=cls.guest_user
             )
 
             testing_proxy.create_template(
@@ -114,7 +125,7 @@ class TestCatalog(TestCase):
         with app.test_client() as c:
             rv = c.get('/en_US/product/product-1')
             self.assertEqual(rv.data, '10')
-            
+
     def test_0020_list_view(self):
         """
         """
@@ -209,6 +220,24 @@ class TestCatalog(TestCase):
         with app.test_client() as c:
             rv = c.get('/en_US/product/product-4')
             self.assertEqual(rv.status_code, 404)
+
+    def test_0090_add_to_wishlist(self):
+        '''Test adding products to wishlist
+        '''
+        app = self.get_app()
+        with app.test_client() as c:
+            c.post('/en_US/login', data={
+                'email': 'email@example.com',
+                'password': 'password',
+            })
+            c.get('/en_US/products/add-to-wishlist?product=1')
+            rv = c.get('/en_US/products/view-wishlist')
+            self.assertEqual(rv.data, '|product-1|')
+
+            c.get('/en_US/products/add-to-wishlist?product=2')
+            rv = c.get('/en_US/products/view-wishlist')
+            self.assertEqual(rv.data, '|product-1||product-2|')
+
 
 def suite():
     "Catalog test suite"

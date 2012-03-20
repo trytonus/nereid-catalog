@@ -100,6 +100,20 @@
             <field name="sequence" eval="250" />
             <field name="url_map" ref="nereid.default_url_map" />
         </record>
+        
+        <record id="wishlist" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/products/add-to-wishlist</field>
+            <field name="endpoint">product.product.add_to_wishlist</field>
+            <field name="sequence" eval="260" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+        
+        <record id="wishlist_page" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/products/view-wishlist</field>
+            <field name="endpoint">nereid.user.render_wishlist</field>
+            <field name="sequence" eval="270" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
 
     </data>
 </tryton>
