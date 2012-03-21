@@ -3,7 +3,7 @@
 "Products catalogue display"
 from collections import deque
 
-from nereid import render_template, cache
+from nereid import render_template, cache, flash, redirect
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, login_required, url_for, \
     Pagination, SitemapIndex, SitemapSection, jsonify
@@ -13,6 +13,8 @@ from flaskext.babel import format_currency
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
+
+from .i18n import _
 
 DEFAULT_STATE = {'invisible': Not(Bool(Eval('displayed_on_eshop')))}
 DEFAULT_STATE2 = {
@@ -222,9 +224,12 @@ class Product(ModelSQL, ModelView):
         """Add the product to wishlist
         """
         user = request.nereid_user
-        product = request.args.get('product')
-        self.write(product, {'wishlist': [('add', user.id)]})
-        return True
+        product = request.args.get('product', type=int)
+        self.write(product, {'wishlist': [('add', [user.id])]})
+        flash(_("The product has been added to wishlist"))
+        if request.is_xhr:
+            return 'OK'
+        return redirect(url_for('nereid.user.render_wishlist'))
 
     def quick_search(self):
         """A quick and dirty search which searches through the product.product
