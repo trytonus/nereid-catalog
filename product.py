@@ -8,6 +8,7 @@ from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, login_required, url_for, \
     Pagination, SitemapIndex, SitemapSection, jsonify
 from werkzeug.exceptions import NotFound
+from flaskext.babel import format_currency
 
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
@@ -132,7 +133,10 @@ class Product(ModelSQL, ModelView):
             product_ids = session.get('recent-products', [])
             products = self.read(product_ids, allowed_fields)
             for product in products:
-                product['sale_price'] = str(self.sale_price(product['id']))
+                product['sale_price'] = format_currency(
+                        self.sale_price(product['id']), 
+                        request.nereid_currency.code
+                )
 
         return jsonify(
             products = products
