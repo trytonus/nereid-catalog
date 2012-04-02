@@ -1,4 +1,0 @@
-# This file specifically install tryton specific dependencies of nereid-catalog
-
-# Install tryton product module
-trytond_product >2.0,<2.1
