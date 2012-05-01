@@ -62,11 +62,15 @@ class TestCatalog(TestCase):
                 'Category 3', uri='category3'
             )
 
-            cls.site = testing_proxy.create_site('testsite.com', 
+            currency_obj = testing_proxy.pool.get('currency.currency')
+            usd, = currency_obj.search([('code', '=', 'USD')], limit=1)
+            cls.site = testing_proxy.create_site(
+                'localhost', 
                 category_template=category_template,
                 product_template=product_template,
                 categories=[('set', [category, category2])],
-                guest_user=cls.guest_user
+                guest_user=cls.guest_user,
+                currencies=[('set', [usd])]
             )
 
             testing_proxy.create_template(
@@ -106,10 +110,8 @@ class TestCatalog(TestCase):
             txn.cursor.commit()
 
     def get_app(self, **options):
-        return testing_proxy.make_app(
-            SITE='testsite.com', 
-            GUEST_USER=self.guest_user, **options
-        )
+        app = testing_proxy.make_app(SITE='localhost')
+        return app
 
     def setUp(self):
         self.currency_obj = testing_proxy.pool.get('currency.currency')
