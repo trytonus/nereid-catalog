@@ -1,6 +1,11 @@
-#!/usr/bin/env python
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# -*- coding: utf-8 -*-
+'''
+    Catalog test suite
+    
+    :copyright: (c) 2010-2012 by Openlabs Technologies & Consulting (P) Ltd.
+    :license: GPLv3, see LICENSE for more details
+    
+'''
 from decimal import Decimal
 import json
 

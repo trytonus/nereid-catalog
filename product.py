@@ -1,6 +1,13 @@
-#This file is part of Tryton/Nereid.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
-"Products catalogue display"
+# -*- coding: utf-8 -*-
+'''
+    product
+    
+    Products catalogue display
+    
+    :copyright: (c) 2010-2012 by Openlabs Technologies & Consulting (P) Ltd.
+    :license: GPLv3, see LICENSE for more details
+    
+'''
 from collections import deque
 
 from nereid import render_template, cache, flash, redirect

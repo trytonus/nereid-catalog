@@ -4,8 +4,8 @@
 
     Regsiter testing helpers
 
-    :copyright: © 2011 by Openlabs Technologies & Consulting (P) Limited
-    :license: BSD, see LICENSE for more details.
+    :copyright: (c) 2011 by Openlabs Technologies & Consulting (P) Limited
+    :license: GPLv3, see LICENSE for more details.
 """
 from nereid.testing import testing_proxy
 
