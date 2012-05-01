@@ -6,7 +6,9 @@ from collections import deque
 from nereid import render_template, cache, flash, redirect
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, login_required, url_for, \
-    Pagination, SitemapIndex, SitemapSection, jsonify
+    jsonify
+from nereid.contrib.pagination import Pagination
+from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
 from flaskext.babel import format_currency
 
