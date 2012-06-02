@@ -86,21 +86,21 @@ class TestCatalog(TestCase):
             )
             cls.product = testing_proxy.create_product(
                 'product 1', category,
-                type = 'stockable',
+                type = 'goods',
                 list_price = Decimal('10'),
                 cost_price = Decimal('5'),
                 uri = 'product-1',
             )
             cls.product = testing_proxy.create_product(
                 'product 2', category2,
-                type = 'stockable',
+                type = 'goods',
                 list_price = Decimal('20'),
                 cost_price = Decimal('5'),
                 uri = 'product-2',
             )
             cls.product = testing_proxy.create_product(
                 'product 3', category3,
-                type = 'stockable',
+                type = 'goods',
                 list_price = Decimal('30'),
                 cost_price = Decimal('5'),
                 uri = 'product-3',
@@ -108,7 +108,7 @@ class TestCatalog(TestCase):
             cls.product = testing_proxy.create_product(
                 'product 4', category,
                 displayed_on_eshop = False,
-                type = 'stockable',
+                type = 'goods',
                 list_price = Decimal('30'),
                 cost_price = Decimal('5'),
                 uri = 'product-4',

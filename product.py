@@ -22,6 +22,7 @@ from flaskext.babel import format_currency
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
+from trytond.pool import Pool
 
 from .i18n import _
 
@@ -36,9 +37,9 @@ class Product(ModelSQL, ModelView):
     "Product extension for Nereid"
     _name = "product.product"
 
-    uri = fields.Char('URI', select=1, on_change_with=['name', 'uri'],
+    uri = fields.Char('URI', select=True, on_change_with=['name', 'uri'],
         states=DEFAULT_STATE2)
-    displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=1)
+    displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
 
     thumbnail = fields.Many2One('nereid.static.file', 'Thumbnail', 
         states=DEFAULT_STATE)
@@ -296,10 +297,10 @@ class ProductsImages(ModelSQL):
 
     product = fields.Many2One(
         'product.product', 'Product', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
     image = fields.Many2One(
         'nereid.static.file', 'Image', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
 
 ProductsImages()
 
@@ -312,10 +313,10 @@ class ProductCategories(ModelSQL):
 
     product = fields.Many2One(
         'product.product', 'Product', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
     category = fields.Many2One(
         'product.category', 'Category', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
 
 ProductCategories()
 
@@ -328,10 +329,10 @@ class ProductUser(ModelSQL):
 
     product = fields.Many2One(
         'product.product', 'Product', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
     user = fields.Many2One(
         'nereid.user', 'User', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
 
 ProductUser()
 
@@ -344,13 +345,13 @@ class ProductsRelated(ModelSQL):
 
     product = fields.Many2One(
         'product.product', 'Product', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
     up_sell = fields.Many2One(
         'product.product', 'Up-sell Product', 
-        ondelete='CASCADE', select=1)
+        ondelete='CASCADE', select=True)
     cross_sell = fields.Many2One(
         'product.product', 'Cross-sell Product', 
-        ondelete='CASCADE', select=1)
+        ondelete='CASCADE', select=True)
 
 ProductsRelated()
 
@@ -409,7 +410,7 @@ class ProductCategory(ModelSQL, ModelView):
         """
         Renders the template
         """
-        product_obj = self.pool.get('product.product')
+        product_obj = Pool().get('product.product')
         category_ids = self.search([
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
@@ -566,9 +567,9 @@ class WebsiteCategory(ModelSQL):
 
     website = fields.Many2One(
         'nereid.website', 'Website', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
     category = fields.Many2One(
         'product.category', 'Category', 
-        ondelete='CASCADE', select=1, required=True)
+        ondelete='CASCADE', select=True, required=True)
 
 WebsiteCategory()
