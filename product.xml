@@ -19,7 +19,7 @@
                         <page string="E-Commerce Details" col="4" id="ecomm_det">
                             <label name="displayed_on_eshop"/>
                             <field name="displayed_on_eshop"/>
-							<label name="uri"/>
+                            <label name="uri"/>
                             <field name="uri"/>
                             <button name="update_uri" type="object" 
                                 string="Update URI" colspan="2"/>
