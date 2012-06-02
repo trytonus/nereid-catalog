@@ -75,6 +75,7 @@ class TestCatalog(TestCase):
                 product_template=product_template,
                 categories=[('set', [category, category2])],
                 guest_user=cls.guest_user,
+                application_user=1,
                 currencies=[('set', [usd])]
             )
 
@@ -115,7 +116,7 @@ class TestCatalog(TestCase):
             txn.cursor.commit()
 
     def get_app(self, **options):
-        app = testing_proxy.make_app(SITE='localhost')
+        app = testing_proxy.make_app(SITE='localhost', **options)
         return app
 
     def setUp(self):
