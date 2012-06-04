@@ -46,11 +46,11 @@ class TestCatalog(TestCase):
                 'login.jinja', 
                 '{{ login_form.errors }} {{get_flashed_messages()}}'
             )
-            category_template = testing_proxy.create_template(
-                'category-list.jinja', 
+            testing_proxy.create_template(
+                'product-list.jinja',
                 '{% for product in products %}|{{ product.name }}|{% endfor %}'
             )
-            product_template = testing_proxy.create_template(
+            testing_proxy.create_template(
                 'product.jinja', '{{ product.sale_price(product.id) }}'
             )
             wishlist_template = testing_proxy.create_template(
@@ -71,8 +71,6 @@ class TestCatalog(TestCase):
             usd, = currency_obj.search([('code', '=', 'USD')], limit=1)
             cls.site = testing_proxy.create_site(
                 'localhost', 
-                category_template=category_template,
-                product_template=product_template,
                 categories=[('set', [category, category2])],
                 guest_user=cls.guest_user,
                 application_user=1,
@@ -123,6 +121,22 @@ class TestCatalog(TestCase):
         self.currency_obj = testing_proxy.pool.get('currency.currency')
         self.site_obj = testing_proxy.pool.get('nereid.website')
         self.product_obj = testing_proxy.pool.get('product.product')
+
+    def test_0005_test_view(self):
+        """
+        Test the views
+        """
+        from trytond.tests import test_tryton
+        test_tryton.POOL = testing_proxy.pool
+        test_tryton.DB_NAME = testing_proxy.db_name
+        test_tryton.test_view('nereid_catalog')
+
+    def test_0007_test_depends(self):
+        '''
+        Test Depends
+        '''
+        from trytond.tests.test_tryton import test_depends
+        test_depends()
 
     def test_0010_get_price(self):
         """

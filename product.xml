@@ -165,10 +165,6 @@
                 <data>
                     <xpath expr="/form/notebook" position="inside">
                         <page string="Catalog Config." id="catalog">
-                            <label name="product_template" />
-                            <field name="product_template" />
-                            <label name="category_template" />
-                            <field name="category_template" />
                             <separator name="categories" colspan="4"/>
                             <field name="categories" colspan="4"/>
                         </page>

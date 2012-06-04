@@ -207,8 +207,7 @@ class Product(ModelSQL, ModelView):
             ('displayed_on_eshop', '=', True),
             ('category', 'in', request.nereid_website.get_categories()),
         ], page, self.per_page)
-        return render_template(request.nereid_website.category_template.name, 
-            products = products)
+        return render_template('product-list.jinja', products=products)
 
     def sale_price(self, product, quantity=0):
         """Return the Sales Price. 
@@ -437,9 +436,7 @@ class ProductCategory(ModelSQL, ModelView):
             ('displayed_on_eshop', '=', True),
             ('sites', '=', request.nereid_website.id),
         ], page, self.per_page)
-        return render_template(
-            request.nereid_website.category_template.name, 
-            categories=categories)
+        return render_template('category-list.jinja', categories=categories)
 
     def get_categories(self, page=1):
         """Return list of categories
@@ -516,11 +513,6 @@ class WebSite(ModelSQL, ModelView):
         'nereid.website-product.category',
         'website', 'category', 'Categories Displayed on E-Shop',
         domain=[('displayed_on_eshop', '=', True)])
-
-    product_template = fields.Many2One(
-       'nereid.template', 'Product List Template', required=True)
-    category_template = fields.Many2One(
-       'nereid.template', 'Prod. Category List Template', required=True)
 
     def get_categories(self):
         """Returns the IDS of the categories
