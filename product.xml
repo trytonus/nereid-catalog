@@ -103,24 +103,25 @@
                 ]]>
             </field>
         </record>
-        
-        <record model="ir.ui.view" id="party_address_view_form_wishlist">
-            <field name="model">party.address</field>
+
+        <record model="ir.ui.view" id="nereid_user_view_form_wishlist">
+            <field name="model">nereid.user</field>
             <field name="type">form</field>
-            <field name="inherit" ref="party.address_view_form"/>
+            <field name="inherit" ref="nereid.nereid_user_form"/>
             <field name="arch" type="xml">
                 <![CDATA[
                 <data>
-                    <xpath expr="/form/button[@name=&quot;create_web_account&quot;]" 
-                                                        position="after">
-                        <newline/>
-                        <separator 
-                        colspan="4" 
-                        string="Wishlist" 
-                        id="sepr_wishlist"/>
-                        <field name="wishlist" colspan="4"/>
+                    <xpath expr="/form/notebook/page[@string='Accounting']" position="after">
+                        <page string="Wishlist" id="wishlist">
+                            <newline/>
+                            <separator 
+                            colspan="4" 
+                            string="Wishlist" 
+                            id="sepr_wishlist"/>
+                            <field name="wishlist" colspan="4"/>
+                        </page>
                     </xpath>
-                </data>
+                </data>  
                 ]]>
             </field>
         </record>
