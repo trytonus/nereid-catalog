@@ -39,6 +39,12 @@ class TestCatalog(TestCase):
                 '{% for product in products %}|{{ product.name }}|{% endfor %}'
             )
             testing_proxy.create_template(
+                'category-list.jinja',
+                '{%- for category in categories %}'
+                '|{{ category.name }}|'
+                '{%- endfor %}'
+            )
+            testing_proxy.create_template(
                 'search-results.jinja', 
                 '{% for product in products %}|{{ product.name }}|{% endfor %}'
             )
@@ -171,6 +177,15 @@ class TestCatalog(TestCase):
 
             rv = c.get('/en_US/category/category3')
             self.assertEqual(rv.status_code, 404)
+
+    def test_0035_category_list(self):
+        """
+        Test the category list pages
+        """
+        app = self.get_app()
+        with app.test_client() as c:
+            rv = c.get('/en_US/catalog')
+            self.assertEqual(rv.data, '|Category||Category 2|')
 
     def test_0040_quick_search(self):
         """

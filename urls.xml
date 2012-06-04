@@ -3,7 +3,7 @@
     <data noupdate="1">
     
         <record id="catalog" model="nereid.url_rule">
-            <field name="rule">/&lt;language&gt;/Catalog</field>
+            <field name="rule">/&lt;language&gt;/catalog</field>
             <field name="endpoint">product.category.render_list</field>
             <field name="sequence" eval="140" />
             <field name="url_map" ref="nereid.default_url_map" />
