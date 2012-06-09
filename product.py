@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 '''
     product
-    
+
     Products catalogue display
-    
+
     :copyright: (c) 2010-2012 by Openlabs Technologies & Consulting (P) Ltd.
     :license: GPLv3, see LICENSE for more details
-    
+
 '''
 from collections import deque
 
@@ -113,7 +113,7 @@ class Product(ModelSQL, ModelView):
         """
         GET
         ---
-        
+
         Return a list of recently visited products in JSON
 
         POST
@@ -146,7 +146,7 @@ class Product(ModelSQL, ModelView):
             products = self.read(product_ids, allowed_fields)
             for product in products:
                 product['sale_price'] = format_currency(
-                        self.sale_price(product['id']), 
+                        self.sale_price(product['id']),
                         request.nereid_currency.code
                 )
 
@@ -157,7 +157,7 @@ class Product(ModelSQL, ModelView):
     def _add_to_recent_list(self, product_id):
         """Adds the given product ID to the list of recently viewed products
         By default the list size is 5. To change this you can inherit
-        product.product and set :attr:`recent_list_size` attribute to a 
+        product.product and set :attr:`recent_list_size` attribute to a
         non negative integer value
 
         For faster and easier access the products are stored with the ids alone
@@ -193,7 +193,7 @@ class Product(ModelSQL, ModelView):
 
         .. tip::
 
-            The implementation uses offset for pagination and could be 
+            The implementation uses offset for pagination and could be
             extremely resource intensive on databases. Hence you might want to
             either have an alternate cache/search server based pagination or
             limit the pagination to a maximum page number.
@@ -210,16 +210,16 @@ class Product(ModelSQL, ModelView):
         return render_template('product-list.jinja', products=products)
 
     def sale_price(self, product, quantity=0):
-        """Return the Sales Price. 
+        """Return the Sales Price.
         A wrapper designed to work as a context variable in templating
 
         The price is calcualetd from the pricelist associated with the current
-        user. The user in the case of guest user is logged in user. In the 
-        event that the logged in user does not have a pricelist set against 
+        user. The user in the case of guest user is logged in user. In the
+        event that the logged in user does not have a pricelist set against
         the user, the guest user's pricelist is chosen.
 
-        Finally if neither the guest user, nor the regsitered user has a 
-        pricelist set against them then the list price is displayed as the 
+        Finally if neither the guest user, nor the regsitered user has a
+        pricelist set against them then the list price is displayed as the
         price of the product
 
         :param product: ID of product
@@ -327,10 +327,10 @@ class ProductUser(ModelSQL):
     _description = __doc__
 
     product = fields.Many2One(
-        'product.product', 'Product', 
+        'product.product', 'Product',
         ondelete='CASCADE', select=True, required=True)
     user = fields.Many2One(
-        'nereid.user', 'User', 
+        'nereid.user', 'User',
         ondelete='CASCADE', select=True, required=True)
 
 ProductUser()
@@ -343,13 +343,13 @@ class ProductsRelated(ModelSQL):
     _description = __doc__
 
     product = fields.Many2One(
-        'product.product', 'Product', 
+        'product.product', 'Product',
         ondelete='CASCADE', select=True, required=True)
     up_sell = fields.Many2One(
-        'product.product', 'Up-sell Product', 
+        'product.product', 'Up-sell Product',
         ondelete='CASCADE', select=True)
     cross_sell = fields.Many2One(
-        'product.product', 'Cross-sell Product', 
+        'product.product', 'Cross-sell Product',
         ondelete='CASCADE', select=True)
 
 ProductsRelated()
@@ -360,14 +360,19 @@ class ProductCategory(ModelSQL, ModelView):
     _name = "product.category"
     _inherit = 'product.category'
 
-    uri = fields.Char('URI', select=True, 
-            on_change_with=['name', 'uri', 'parent'], states=DEFAULT_STATE2)
+    uri = fields.Char('URI', select=True,
+        on_change_with=['name', 'uri', 'parent'], states=DEFAULT_STATE2
+    )
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?')
     description = fields.Text('Description')
-    image = fields.Many2One('nereid.static.file', 'Image', 
-            states=DEFAULT_STATE)
-    sites = fields.Many2Many('nereid.website-product.category',
-            'category', 'website', 'Sites',  states=DEFAULT_STATE)
+    image = fields.Many2One(
+        'nereid.static.file', 'Image',
+        states=DEFAULT_STATE
+    )
+    sites = fields.Many2Many(
+        'nereid.website-product.category',
+        'category', 'website', 'Sites',  states=DEFAULT_STATE
+    )
 
     def __init__(self):
         super(ProductCategory, self).__init__()
@@ -383,7 +388,7 @@ class ProductCategory(ModelSQL, ModelView):
         return True
 
     def on_change_with_uri(self, vals):
-        """Slugifies the full name of a category to 
+        """Slugifies the full name of a category to
         make the uri on change of product name.
         Slugification will occur only if there is no uri filled from before.
         """
@@ -425,7 +430,7 @@ class ProductCategory(ModelSQL, ModelView):
             ('displayed_on_eshop', '=', True),
             ('category', '=', category.id),
         ], page=page, per_page=self.per_page)
-        return render_template('category.jinja', category=category, 
+        return render_template('category.jinja', category=category,
             products=products,)
 
     def render_list(self, page=1):
@@ -504,7 +509,7 @@ ProductCategory()
 
 class WebSite(ModelSQL, ModelView):
     """
-    Extend site to add templates for product listing and 
+    Extend site to add templates for product listing and
     category listing
     """
     _name = 'nereid.website'
@@ -545,8 +550,9 @@ class NereidUser(ModelSQL, ModelView):
         """
         Render a template with the items in wishlist
         """
-        return render_template('wishlist.jinja', 
-            products=request.nereid_user.wishlist)
+        return render_template(
+            'wishlist.jinja', products=request.nereid_user.wishlist
+        )
 
 NereidUser()
 
@@ -558,10 +564,10 @@ class WebsiteCategory(ModelSQL):
     _description = __doc__
 
     website = fields.Many2One(
-        'nereid.website', 'Website', 
+        'nereid.website', 'Website',
         ondelete='CASCADE', select=True, required=True)
     category = fields.Many2One(
-        'product.category', 'Category', 
+        'product.category', 'Category',
         ondelete='CASCADE', select=True, required=True)
 
 WebsiteCategory()
