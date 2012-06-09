@@ -30,6 +30,35 @@
             <field name="url_map" ref="nereid.default_url_map" />
         </record>
 
+        <!-- Browse Nodes -->
+        <record id="nodes" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/nodes</field>
+            <field name="endpoint">product.browse_node.render_list</field>
+            <field name="sequence" eval="140" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="nodes_page" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/nodes/&lt;int:page&gt;</field>
+            <field name="endpoint">product.browse_node.render_list</field>
+            <field name="sequence" eval="120" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="node_uri" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/node/&lt;uri&gt;</field>
+            <field name="endpoint">product.browse_node.render</field>
+            <field name="sequence" eval="140" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
+        <record id="node_uri_page" model="nereid.url_rule">
+            <field name="rule">/&lt;language&gt;/node/&lt;uri&gt;/&lt;int:page&gt;</field>
+            <field name="endpoint">product.browse_node.render</field>
+            <field name="sequence" eval="160" />
+            <field name="url_map" ref="nereid.default_url_map" />
+        </record>
+
         <record id="product_recent" model="nereid.url_rule">
             <field name="rule">/&lt;language&gt;/products/+recent</field>
             <field name="endpoint">product.product.recent_products</field>
