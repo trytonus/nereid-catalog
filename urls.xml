@@ -89,7 +89,7 @@
         </record>          
 
         <record id="products_page" model="nereid.url_rule">
-            <field name="rule">/&lt;language&gt;/products/&lt;page&gt;</field>
+            <field name="rule">/&lt;language&gt;/products/&lt;int:page&gt;</field>
             <field name="endpoint">product.product.render_list</field>
             <field name="sequence" eval="220" />
             <field name="url_map" ref="nereid.default_url_map" />
