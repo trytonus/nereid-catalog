@@ -2,17 +2,61 @@
 #This file is part of Tryton and Nereid.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 
-from setuptools import setup
+from setuptools import setup, Command
 import re
+
+
+class run_audit(Command):
+    """Audits source code using PyFlakes for following issues:
+        - Names which are used but not defined or used before they are defined.
+        - Names which are redefined without having been used.
+    """
+    description = "Audit source code with PyFlakes"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        import os, sys
+        try:
+            import pyflakes.scripts.pyflakes as flakes
+        except ImportError:
+            print "Audit requires PyFlakes installed in your system."
+            sys.exit(-1)
+
+        warns = 0
+        # Define top-level directories
+        dirs = ('.')
+        for dir in dirs:
+            for root, _, files in os.walk(dir):
+                if root.startswith(('./build', './doc')):
+                    continue
+                for file in files:
+                    if not file.endswith(('__init__.py', 'upload.py')) \
+                            and file.endswith('.py'):
+                        warns += flakes.checkPath(os.path.join(root, file))
+        if warns > 0:
+            print "Audit finished with total %d warnings." % warns
+            sys.exit(-1)
+        else:
+            print "No problems found in sourcecode."
+            sys.exit(0)
+
 
 info = eval(open('__tryton__.py').read())
 major_version, minor_version, _ = info.get('version', '0.0.1').split('.', 2)
 major_version = int(major_version)
 minor_version = int(minor_version)
 
-requires = ['nereid']
+requires = [
+    'nereid>=2.4.0.8,<2.5'
+]
 for dep in info.get('depends', []):
-    if not re.match(r'(ir|res|workflow|webdav|nereid)(\W|$)', dep):
+    if not re.match(r'(ir|res|workflow|webdav)(\W|$)', dep):
         requires.append('trytond_%s >= %s.%s, < %s.%s' %
                 (dep, major_version, minor_version, major_version,
                     minor_version + 1))
@@ -54,9 +98,9 @@ setup(name='trytond_nereid_catalog',
     [trytond.modules]
     nereid_catalog = trytond.modules.nereid_catalog
     """,
-    test_suite='tests',
+    test_suite='tests.suite',
     test_loader='trytond.test_loader:Loader',
-    dependency_links = [
-        "hg+ssh://hg@projects.openlabs.co.in/openlabs/nereid2"
-    ],
+    cmdclass={
+        'audit': run_audit,
+    },
 )
