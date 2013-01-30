@@ -350,11 +350,17 @@ class TestCatalog(NereidTestCase):
                     'email': 'email@example.com',
                     'password': 'password',
                 })
-                c.get('/en_US/products/add-to-wishlist?product=1')
+                c.post(
+                    '/en_US/products/add-to-wishlist',
+                    data={'product': 1}
+                )
                 rv = c.get('/en_US/products/view-wishlist')
                 self.assertEqual(rv.data, '|product-1|')
 
-                c.get('/en_US/products/add-to-wishlist?product=2')
+                c.post(
+                    '/en_US/products/add-to-wishlist',
+                    data={'product': 2}
+                )
                 rv = c.get('/en_US/products/view-wishlist')
                 self.assertEqual(rv.data, '|product-1||product-2|')
 

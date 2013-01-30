@@ -13,16 +13,15 @@
             <field name="arch" type="xml">
                 <![CDATA[
                 <data>
-                    <xpath
-                        expr="/form/notebook/page[@id=&quot;childs&quot;]"
-                        position="after">
+                    <xpath expr="/form/notebook/page[@id=&quot;childs&quot;]"
+                            position="after">
                         <page string="E-Commerce Details" col="4" id="ecomm_det">
                             <label name="displayed_on_eshop"/>
                             <field name="displayed_on_eshop"/>
                             <label name="uri"/>
                             <field name="uri"/>
-                            <button name="update_uri" type="object" 
-                                string="Update URI" colspan="2"/>
+                            <button name="update_uri" string="Update URI" 
+                                colspan="2"/>
                             <label name="image"/>
                             <field name="image"/>
                             <newline />
@@ -49,9 +48,8 @@
             <field name="arch" type="xml">
                 <![CDATA[
                 <data>
-                    <xpath
-                        expr="/form/notebook/page[@id=&quot;general&quot;]"
-                        position="after">
+                    <xpath expr="/form/notebook/page[@id=&quot;general&quot;]"
+                            position="after">
                         <page string="E-Commerce Details" 
                                 col="4" id="ecomm_det">
                             <label name="displayed_on_eshop"/>
@@ -229,6 +227,8 @@
                     <field name="displayed_on_eshop" />
                     <label name="uri" />
                     <field name="uri" />
+                    <button name="update_uri" string="Update URI" 
+                        colspan="2"/>
                     <notebook colspan="4">
                         <page string="Children" id="children">
                             <field name="children" />
