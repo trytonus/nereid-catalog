@@ -423,7 +423,7 @@ class BrowseNode(ModelSQL, ModelView):
         ])
         products = Pagination(Product, [
             ('displayed_on_eshop', '=', True),
-            ('browse_nodes', 'in', browse_nodes),
+            ('browse_nodes', 'in', map(int, browse_nodes)),
         ], page=page, per_page=cls.products_per_page)
         return render_template(
             'browse-node.jinja', browse_node=browse_node, products=products
