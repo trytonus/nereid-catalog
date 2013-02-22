@@ -365,6 +365,9 @@ class BrowseNode(ModelSQL, ModelView):
         cls._error_messages.update({
             'recursive_nodes': 'You cannot create recursive browse nodes!',
         })
+        cls._buttons.update({
+            'update_uri': {}
+        })
 
     @staticmethod
     def default_left():
