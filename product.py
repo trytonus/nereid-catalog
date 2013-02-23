@@ -4,7 +4,7 @@
 
     Products catalogue display
 
-    :copyright: (c) 2010-2012 by Openlabs Technologies & Consulting (P) Ltd.
+    :copyright: (c) 2010-2013 by Openlabs Technologies & Consulting (P) Ltd.
     :license: GPLv3, see LICENSE for more details
 
 '''
@@ -22,20 +22,36 @@ from flaskext.babel import format_currency
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
-from trytond.pool import Pool
+from trytond.pool import Pool, PoolMeta
 
 from .i18n import _
+
+__all__ = ['Product', 'BrowseNode', 'ProductBrowseNode', 'ProductsImageSet',
+           'ProductUser', 'ProductsRelated', 'ProductCategory', 'WebSite',
+           'NereidUser', 'WebsiteCategory', 'WebsiteBrowseNode']
+__metaclass__ = PoolMeta
 
 DEFAULT_STATE = {'invisible': Not(Bool(Eval('displayed_on_eshop')))}
 DEFAULT_STATE2 = {
     'invisible': Not(Bool(Eval('displayed_on_eshop'))),
     'required': Bool(Eval('displayed_on_eshop')),
-    }
+}
 
 
-class Product(ModelSQL, ModelView):
+class Product:
     "Product extension for Nereid"
-    _name = "product.product"
+    __name__ = "product.product"
+
+    #: Decides the number of products that would be remebered. 
+    recent_list_size = 5
+
+    #: The list of fields allowed to be sent back on a JSON response from the
+    #: application. This is validated before any product info is built
+    #:
+    #: The `name`, `sale_price`, `id` and `uri` are sent by default
+    #:
+    #: .. versionadded:: 0.3
+    json_allowed_fields = set(['name', 'sale_price', 'id', 'uri'])
 
     uri = fields.Char('URI', select=True, on_change_with=['name', 'uri'],
         states=DEFAULT_STATE2)
@@ -60,59 +76,46 @@ class Product(ModelSQL, ModelView):
     )
     #TODO: Create a functional many2many field for the sites 
 
-    def __init__(self):
-        super(Product, self).__init__()
-        self._sql_constraints += [
+    @classmethod
+    def __setup__(cls):
+        super(Product, cls).__setup__()
+        cls._sql_constraints += [
             ('uri_uniq', 'UNIQUE(uri)', 'URI must be unique'),
         ]
-        self.per_page = 9
+        cls.per_page = 9
 
-    def default_displayed_on_eshop(self):
+    @staticmethod
+    def default_displayed_on_eshop():
         return True
 
-    def on_change_with_uri(self, vals):
-        if vals.get('name'):
-            if not vals.get('uri'):
-                vals['uri'] = slugify(vals['name'])
-            return vals['uri']
-        else:
-            return {}
+    def on_change_with_uri(self):
+        """
+        If the URI is empty and the name is there, slugify name into URI
+        """
+        if self.name and not self.uri:
+            return slugify(self.name)
+        return self.uri
 
-    def render(self, uri):
+    @classmethod
+    def render(cls, uri):
         """Renders the template for a single product.
 
         :param uri: URI of the product
         """
         categories = request.nereid_website.get_categories() + [None]
-        product_ids = self.search([
+        products = cls.search([
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
             ('category', 'in', categories),
-            ]
-        )
-        if not product_ids:
+        ], limit=1)
+        if not products:
             return NotFound('Product Not Found')
 
-        # if only one product is found then it is rendered and 
-        # if more than one are found then the first one is rendered
-        product = self.browse(product_ids[0])
-        self._add_to_recent_list(product_ids[0])
-        return render_template('product.jinja', product=product)
+        cls._add_to_recent_list(int(products[0]))
+        return render_template('product.jinja', product=products[0])
 
-    #: Decides the number of products that would be remebered. 
-    recent_list_size = 5
-
-    #: The list of fields allowed to be sent back on a JSON response from the
-    #: application. This is validated before any product info is built
-    #:
-    #: The `name`, `sale_price`, `id` and `uri` are sent by default
-    #:
-    #: .. versionadded:: 0.3
-    json_allowed_fields = [
-        'name', 'sale_price', 'id', 'uri'
-    ]
-
-    def recent_products(self):
+    @classmethod
+    def recent_products(cls):
         """
         GET
         ---
@@ -130,34 +133,31 @@ class Product(ModelSQL, ModelView):
         Just as with GET the response is the AJAX of recent products
         """
         if request.method == 'POST':
-            self._add_to_recent_list(request.form.get('product_id', type=int))
+            cls._add_to_recent_list(request.form.get('product_id', type=int))
 
-        fields = request.args.getlist('fields')
-        if fields:
-            allowed_fields = [
-                f for f in fields if f in self.json_allowed_fields
-            ]
-        else:
-            allowed_fields = self.json_allowed_fields[:]
-        products = []
+        fields = set(request.args.getlist('fields')) or cls.json_allowed_fields
+        fields = fields & cls.json_allowed_fields
 
-        if 'sale_price' in allowed_fields:
-            allowed_fields.remove('sale_price')
+        if 'sale_price' in fields:
+            fields.remove('sale_price')
 
+        response = []
         if hasattr(session, 'sid'):
-            product_ids = session.get('recent-products', [])
-            products = self.read(product_ids, allowed_fields)
+            products = cls.browse(session.get('recent-products', []))
             for product in products:
-                product['sale_price'] = format_currency(
-                        self.sale_price(product['id']),
+                product_val = {}
+                for field in fields:
+                    product_val[field] = getattr(product, field)
+                product_val['sale_price'] = format_currency(
+                        product.sale_price(),
                         request.nereid_currency.code
                 )
+                response.append(product_val)
 
-        return jsonify(
-            products = products
-        )
+        return jsonify(products=response)
 
-    def _add_to_recent_list(self, product_id):
+    @classmethod
+    def _add_to_recent_list(cls, product_id):
         """Adds the given product ID to the list of recently viewed products
         By default the list size is 5. To change this you can inherit
         product.product and set :attr:`recent_list_size` attribute to a
@@ -183,14 +183,18 @@ class Product(ModelSQL, ModelView):
             return []
 
         recent_products = deque(
-            session.setdefault('recent-products', []), self.recent_list_size
+            session.setdefault('recent-products', []), cls.recent_list_size
         )
+        # XXX: If a product is already in the recently viewed list, but it
+        # would be nice to remember the recent_products list in the order of
+        # visits.
         if product_id not in recent_products:
             recent_products.appendleft(product_id)
             session['recent-products'] = list(recent_products)
         return recent_products
 
-    def render_list(self, page=1):
+    @classmethod
+    def render_list(cls, page=1):
         """
         Renders the list of all products which are displayed_on_shop=True
 
@@ -207,13 +211,13 @@ class Product(ModelSQL, ModelView):
         :param page: The page in pagination to be displayed
         """
         categories = request.nereid_website.get_categories() + [None]
-        products = Pagination(self, [
+        products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
             ('category', 'in', categories),
-        ], page, self.per_page)
+        ], page, cls.per_page)
         return render_template('product-list.jinja', products=products)
 
-    def sale_price(self, product, quantity=0):
+    def sale_price(self, quantity=0):
         """Return the Sales Price.
         A wrapper designed to work as a context variable in templating
 
@@ -226,61 +230,62 @@ class Product(ModelSQL, ModelView):
         pricelist set against them then the list price is displayed as the
         price of the product
 
-        :param product: ID of product
         :param quantity: Quantity
         """
-        product = self.browse(product)
-        return product.list_price
+        return self.list_price
 
+    @classmethod
     @login_required
-    def add_to_wishlist(self):
-        """Add the product to wishlist
+    def add_to_wishlist(cls):
         """
-        user = request.nereid_user
-        product = request.args.get('product', type=int)
-        self.write(product, {'wishlist': [('add', [user.id])]})
-        flash(_("The product has been added to wishlist"))
+        Add the product to wishlist
+
+        .. versionchanged::2.6.0.1
+
+            Only POST method can now be used to add products to wishlist.
+        """
+        cls.write(
+            [cls(request.form.get('product', type=int))],
+            {'wishlist': [('add', [request.nereid_user.id])]}
+        )
         if request.is_xhr:
             return 'OK'
+        flash(_("The product has been added to wishlist"))
         return redirect(url_for('nereid.user.render_wishlist'))
 
-    def quick_search(self):
+    @classmethod
+    def quick_search(cls):
         """A quick and dirty search which searches through the product.product
         for an insensitive like and returns a pagination object the same.
         """
-        page = int(request.args.get('page', 1))
+        page = request.args.get('page', 1, type=int)
         query = request.args.get('q', '')
         categories = request.nereid_website.get_categories() + [None]
-        products = Pagination(self, [
+        products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
             ('category', 'in', categories),
             ('name', 'ilike', '%' + query + '%'),
-        ], page, self.per_page)
-        return render_template('search-results.jinja', products = products)
+        ], page, cls.per_page)
+        return render_template('search-results.jinja', products=products)
 
-    def context_processor(self):
-        """This function will be called by nereid to update
-        the template context. Must return a dictionary that the context
-        will be updated with.
-
-        This function is registered with nereid.template.context_processor
-        in xml code
+    @classmethod
+    def sitemap_index(cls):
         """
-        return {'get_sale_price': self.sale_price}
-
-    def sitemap_index(self):
+        Returns a Sitemap Index Page
+        """
         categories = request.nereid_website.get_categories() + [None]
-        index = SitemapIndex(self, [
+        index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
             ('category', 'in', categories)
             ]
         )
         return index.render()
 
-    def sitemap(self, page):
+    @classmethod
+    def sitemap(cls, page):
         categories = request.nereid_website.get_categories() + [None]
         sitemap_section = SitemapSection(
-            self, [
+            cls, [
                 ('displayed_on_eshop', '=', True),
                 ('category', 'in', categories)
             ], page
@@ -288,11 +293,13 @@ class Product(ModelSQL, ModelView):
         sitemap_section.changefreq = 'daily'
         return sitemap_section.render()
 
-    def get_absolute_url(self, product, **kwargs):
-        return url_for(
-            'product.product.render', uri=product.uri, **kwargs)
+    def get_absolute_url(self, **kwargs):
+        """
+        Return the URL of the current product.
 
-Product()
+        This method works only under a nereid request context
+        """
+        return url_for('product.product.render', uri=self.uri, **kwargs)
 
 
 class BrowseNode(ModelSQL, ModelView):
@@ -313,8 +320,7 @@ class BrowseNode(ModelSQL, ModelView):
     tag is part of a hierarchy. This gives users the option to infact even use
     browse nodes in-lieu of categories.
     """
-    _name = "product.browse_node"
-    _description = "Browse nodes"
+    __name__ = "product.browse_node"
 
     name = fields.Char('Name', required=True, translate=True)
     uri = fields.Char(
@@ -347,59 +353,46 @@ class BrowseNode(ModelSQL, ModelView):
     #: Products displayed per page when paginated.
     products_per_page = 20
 
-    def __init__(self):
-        super(BrowseNode, self).__init__()
-        self._sql_constraints += [
+    @classmethod
+    def __setup__(cls):
+        super(BrowseNode, cls).__setup__()
+        cls._sql_constraints += [
             ('uri', 'UNIQUE(uri)', 'URI of Browse Node must be unique.')
         ]
-        self._constraints += [
+        cls._constraints += [
             ('check_recursion', 'recursive_nodes'),
         ]
-        self._error_messages.update({
+        cls._error_messages.update({
             'recursive_nodes': 'You cannot create recursive browse nodes!',
         })
+        cls._buttons.update({
+            'update_uri': {}
+        })
 
-    def default_left(self):
+    @staticmethod
+    def default_left():
         return 0
 
-    def default_right(self):
+    @staticmethod
+    def default_right():
         return 0
 
-    def get_rec_name(self, ids, name):
-        if not ids:
-            return {}
-        res = {}
-        def _name(browse_node):
-            if browse_node.id in res:
-                return res[browse_node.id]
-            elif browse_node.parent:
-                return _name(browse_node.parent) + ' / ' + browse_node.name
-            else:
-                return browse_node.name
-        for browse_node in self.browse(ids):
-            res[browse_node.id] = _name(browse_node)
-        return res
+    def get_rec_name(self, name=None):
+        if self.parent:
+            return self.parent.rec_name + ' / ' + self.name
+        return self.name
 
-    def make_uri(self, name, parent):
-        """Construct a URI and return it."""
-        full_name = u''
-        if parent:
-            full_name += "%s-" % self.get_rec_name(
-                [parent.id], None
-            )[parent.id]
-        full_name += name
-        full_name.replace('/', '-')
-        return slugify(full_name)
-
-    def update_uri(self, ids):
-        """Update the uri of the category from the complete name.
+    @classmethod
+    @ModelView.button
+    def update_uri(cls, browse_nodes):
         """
-        for browsenode in self.browse(ids):
-            uri = self.make_uri(browsenode.name, browsenode.parent)
-            self.write(browsenode.id, {'uri': uri})
-        return True
+        Update the uri of the browse node from the rec_name.
+        """
+        for browse_node in browse_nodes:
+            cls.write([browse_node], {'uri': slugify(browse_node.rec_name)})
 
-    def render(self, uri, page=1):
+    @classmethod
+    def render(cls, uri, page=1):
         """
         Renders a page of products in a browse node. The products displayed 
         are not just the products of this browse node, but also those of the 
@@ -409,13 +402,13 @@ class BrowseNode(ModelSQL, ModelView):
         :param uri: uri of the browse node to be shown
         :param page: page of the products to be displayed
         """
-        product_obj = Pool().get('product.product')
+        Product = Pool().get('product.product')
 
-        browse_node_ids = self.search([
+        browse_nodes = cls.search([
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
-        ])
-        if not browse_node_ids:
+        ], limit=1)
+        if not browse_nodes:
             return abort(404)
 
         # TODO: Improve this implementation with the capability to define the
@@ -423,38 +416,36 @@ class BrowseNode(ModelSQL, ModelView):
         # can also be improved with the help of a join and selecting from the
         # relationship table rather than by first chosing the browse nodes, 
         # and then the products (as done here)
-        browse_node = self.browse(browse_node_ids[0])
-        browse_nodes = self.search([
+        browse_node, = browse_nodes
+        browse_nodes = cls.search([
             ('left', '>=', browse_node.left),
             ('right', '<=', browse_node.right),
         ])
-        products = Pagination(product_obj, [
+        products = Pagination(Product, [
             ('displayed_on_eshop', '=', True),
-            ('browse_nodes', 'in', browse_nodes),
-        ], page=page, per_page=self.products_per_page)
+            ('browse_nodes', 'in', map(int, browse_nodes)),
+        ], page=page, per_page=cls.products_per_page)
         return render_template(
             'browse-node.jinja', browse_node=browse_node, products=products
         )
 
-    def render_list(self, page=1):
+    @classmethod
+    def render_list(cls, page=1):
         """
         Renders the list of all browse nodes which are displayed_on_shop=True
         """
-        browse_nodes = Pagination(self, [
+        browse_nodes = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-        ], page, self.products_per_page)
+        ], page, cls.products_per_page)
         return render_template(
             'browse-node-list.jinja', browse_nodes=browse_nodes
         )
 
-BrowseNode()
-
 
 class ProductBrowseNode(ModelSQL):
     "Product BrowseNode Relation"
-    _name = 'product.product-product.browse_node'
+    __name__ = 'product.product-product.browse_node'
     _table = 'product_browse_node_rel'
-    _description = __doc__
 
     product = fields.Many2One(
         'product.product', 'Product',
@@ -463,13 +454,11 @@ class ProductBrowseNode(ModelSQL):
         'product.browse_node', 'Browse Node',
         ondelete='CASCADE', select=True, required=True)
 
-ProductBrowseNode()
 
 
 class ProductsImageSet(ModelSQL, ModelView):
     "Images for Product"
-    _name = 'product.product.imageset'
-    _description = __doc__
+    __name__ = 'product.product.imageset'
 
     name = fields.Char("Name", required=True)
     product = fields.Many2One(
@@ -485,14 +474,11 @@ class ProductsImageSet(ModelSQL, ModelView):
         'nereid.static.file', 'Large Image',
         ondelete='CASCADE', select=True)
 
-ProductsImageSet()
-
 
 class ProductUser(ModelSQL):
     "Product Wishlist"
-    _name = 'product.product-nereid.user'
+    __name__ = 'product.product-nereid.user'
     _table = 'product_user_rel'
-    _description = __doc__
 
     product = fields.Many2One(
         'product.product', 'Product',
@@ -501,14 +487,11 @@ class ProductUser(ModelSQL):
         'nereid.user', 'User',
         ondelete='CASCADE', select=True, required=True)
 
-ProductUser()
-
 
 class ProductsRelated(ModelSQL):
     "Related Product"
-    _name = 'product.product-product.product'
+    __name__ = 'product.product-product.product'
     _table = 'product_product_rel'
-    _description = __doc__
 
     product = fields.Many2One(
         'product.product', 'Product',
@@ -520,13 +503,10 @@ class ProductsRelated(ModelSQL):
         'product.product', 'Cross-sell Product',
         ondelete='CASCADE', select=True)
 
-ProductsRelated()
 
-
-class ProductCategory(ModelSQL, ModelView):
+class ProductCategory:
     "Product Category extension for Nereid"
-    _name = "product.category"
-    _inherit = 'product.category'
+    __name__ = "product.category"
 
     uri = fields.Char('URI', select=True,
         on_change_with=['name', 'uri', 'parent'], states=DEFAULT_STATE2
@@ -542,92 +522,101 @@ class ProductCategory(ModelSQL, ModelView):
         'category', 'website', 'Sites',  states=DEFAULT_STATE
     )
 
-    def __init__(self):
-        super(ProductCategory, self).__init__()
-        self._rpc.update({
-            'update_uri': True,
-        })
-        self._sql_constraints += [
+    @classmethod
+    def __setup__(cls):
+        super(ProductCategory, cls).__setup__()
+        cls._sql_constraints += [
             ('uri_uniq', 'UNIQUE(uri)', 'URI must be unique'),
         ]
-        self.per_page = 9
+        cls.per_page = 9
 
-    def default_displayed_on_eshop(self):
+    @staticmethod
+    def default_displayed_on_eshop():
         return True
 
-    def on_change_with_uri(self, vals):
+    def on_change_with_uri(self):
         """Slugifies the full name of a category to
         make the uri on change of product name.
         Slugification will occur only if there is no uri filled from before.
         """
-        if vals.get('name'):
-            parent = None
-            if not vals.get('uri'):
-                if vals.get('parent'):
-                    parent = self.browse(vals.get('parent'))
-                vals['uri'] = self.make_uri(vals.get('name'), parent)
-            return vals['uri']
-        else:
-            return {}
+        if self.name and not self.uri:
+            full_name = (self.parent and self.parent.rec_name or '') \
+                    + self.name
+            return slugify(full_name)
+        return self.uri
 
-    def update_uri(self, ids):
+    @classmethod
+    @ModelView.button
+    def update_uri(cls, categories):
         """Update the uri of the category from the complete name.
         """
-        for category in self.browse(ids):
-            uri = self.make_uri(category.name, category.parent)
-            self.write(category.id, {'uri': uri})
-        return True
+        for category in categories:
+            cls.write(category.id, {'uri': slugify(category.rec_name)})
 
-    def render(self, uri, page=1):
+    @classmethod
+    def render(cls, uri, page=1):
         """
-        Renders the template
+        Renders the template 'category.jinja' with the category and the
+        products of the category paginated in the context
+
+        :param uri: URI of the product category
+        :param page: Integer value of the page
         """
-        product_obj = Pool().get('product.product')
-        category_ids = self.search([
+        Product = Pool().get('product.product')
+
+        categories = cls.search([
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
             ('sites', '=', request.nereid_website.id)
         ])
-        if not category_ids:
+        if not categories:
             return NotFound('Product Category Not Found')
 
-        # if only one product is found then it is rendered and 
+        # if only one category is found then it is rendered and 
         # if more than one are found then the first one is rendered
-        category = self.browse(category_ids[0])
-        products = Pagination(product_obj, [
+        category = categories[0]
+        products = Pagination(Product, [
             ('displayed_on_eshop', '=', True),
             ('category', '=', category.id),
-        ], page=page, per_page=self.per_page)
-        return render_template('category.jinja', category=category,
-            products=products,)
+        ], page=page, per_page=cls.per_page)
+        return render_template(
+            'category.jinja', category=category, products=products
+        )
 
-    def render_list(self, page=1):
+    @classmethod
+    def render_list(cls, page=1):
         """
         Renders the list of all categories which are displayed_on_shop=True
+        paginated.
+
+        :param page: Integer ID of the page
         """
-        categories = Pagination(self, [
+        categories = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
             ('sites', '=', request.nereid_website.id),
-        ], page, self.per_page)
+        ], page, cls.per_page)
         return render_template('category-list.jinja', categories=categories)
 
-    def get_categories(self, page=1):
+    @classmethod
+    def get_categories(cls, page=1):
         """Return list of categories
         """
-        return Pagination(self, [
+        return Pagination(cls, [
             ('displayed_on_eshop', '=', True),
             ('sites', '=', request.nereid_website.id)
-        ], page, self.per_page)
+        ], page, cls.per_page)
 
-    def get_root_categories(self, page=1):
+    @classmethod
+    def get_root_categories(cls, page=1):
         """Return list of Root Categories."""
-        return Pagination(self, [
+        return Pagination(cls, [
             ('displayed_on_eshop', '=', True),
             ('sites', '=', request.nereid_website.id),
             ('parent', '=', False),
-        ], page, self.per_page)
+        ], page, cls.per_page)
 
-    def context_processor(self):
+    @classmethod
+    def context_processor(cls):
         """This function will be called by nereid to update
         the template context. Must return a dictionary that the context
         will be updated with.
@@ -636,30 +625,23 @@ class ProductCategory(ModelSQL, ModelView):
         in xml code
         """
         return {
-            'all_categories': self.get_categories,
-            'root_categories': self.get_root_categories,
-            }
+            'all_categories': cls.get_categories,
+            'root_categories': cls.get_root_categories,
+        }
 
-    def make_uri(self, name, parent):
-        """Construct a URI and return it."""
-        full_name = u''
-        if parent:
-            full_name += "%s-" % self.get_rec_name([parent.id], None)[parent.id]
-        full_name += name
-        full_name.replace('/', '-')
-        return slugify(full_name)
-
-    def sitemap_index(self):
-        index = SitemapIndex(self, [
+    @classmethod
+    def sitemap_index(cls):
+        index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
             ('id', 'in', request.nereid_website.get_categories())
             ]
         )
         return index.render()
 
-    def sitemap(self, page):
+    @classmethod
+    def sitemap(cls, page):
         sitemap_section = SitemapSection(
-            self, [
+            cls, [
                 ('displayed_on_eshop', '=', True),
                 ('id', 'in', request.nereid_website.get_categories())
             ], page
@@ -667,27 +649,25 @@ class ProductCategory(ModelSQL, ModelView):
         sitemap_section.changefreq = 'daily'
         return sitemap_section.render()
 
-    def get_absolute_url(self, category, **kwargs):
+    def get_absolute_url(self, **kwargs):
         return url_for(
-            'product.category.render', uri=category.uri, **kwargs
+            'product.category.render', uri=self.uri, **kwargs
         )
 
-ProductCategory()
 
-
-class WebSite(ModelSQL, ModelView):
+class WebSite:
     """
     Extend site to add templates for product listing and
     category listing
     """
-    _name = 'nereid.website'
+    __name__ = 'nereid.website'
 
     categories = fields.Many2Many(
         'nereid.website-product.category',
         'website', 'category', 'Categories Displayed on E-Shop',
         domain=[('displayed_on_eshop', '=', True)]
     )
-    
+
     #: The root browse nodes are the main nodes from which the site navigation
     #: should begin. For example, the top navigation on the e-commerce site
     #: could be these root browse nodes and the menu could expand to the 
@@ -700,7 +680,7 @@ class WebSite(ModelSQL, ModelView):
         'website', 'browse_node', 'Root Browse Nodes',
         domain=[('displayed_on_eshop', '=', True)]
     )
-    
+
     featured_products_node = fields.Many2One(
         'product.browse_node', 'Featured Products Node'
     )
@@ -718,27 +698,26 @@ class WebSite(ModelSQL, ModelView):
             Transaction().cursor.dbname,
             Transaction().user,
             'nereid.website.get_categories',
-            request.nereid_website.id,
+            self.id,
             ])
         rv = cache.get(cache_key)
         if rv is None:
-            rv = [x.id for x in request.nereid_website.categories]
+            rv = map(int, self.categories)
             cache.set(cache_key, rv, 60 * 60)
         return rv
 
-WebSite()
 
-
-class NereidUser(ModelSQL, ModelView):
+class NereidUser:
     """Extend User to have product wishlist"""
-    _name = 'nereid.user'
+    __name__ = 'nereid.user'
 
     wishlist = fields.Many2Many(
         'product.product-nereid.user', 'user', 'product', 'Wishlist'
     )
 
+    @classmethod
     @login_required
-    def render_wishlist(self):
+    def render_wishlist(cls):
         """
         Render a template with the items in wishlist
         """
@@ -746,14 +725,11 @@ class NereidUser(ModelSQL, ModelView):
             'wishlist.jinja', products=request.nereid_user.wishlist
         )
 
-NereidUser()
-
 
 class WebsiteCategory(ModelSQL):
     "Categories to be displayed on a website"
-    _name = 'nereid.website-product.category'
+    __name__ = 'nereid.website-product.category'
     _table = 'website_category_rel'
-    _description = __doc__
 
     website = fields.Many2One(
         'nereid.website', 'Website',
@@ -762,14 +738,11 @@ class WebsiteCategory(ModelSQL):
         'product.category', 'Category',
         ondelete='CASCADE', select=True, required=True)
 
-WebsiteCategory()
-
 
 class WebsiteBrowseNode(ModelSQL):
     "Root Browse Nodes on a Website"
-    _name = 'nereid.website-product.browse_node'
+    __name__ = 'nereid.website-product.browse_node'
     _table = 'website_browse_node_rel'
-    _description = __doc__
 
     website = fields.Many2One(
         'nereid.website', 'Website',
@@ -777,5 +750,3 @@ class WebsiteBrowseNode(ModelSQL):
     browse_node = fields.Many2One(
         'product.browse_node', 'Browse Node',
         ondelete='CASCADE', select=True, required=True)
-
-WebsiteBrowseNode()
