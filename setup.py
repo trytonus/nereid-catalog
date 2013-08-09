@@ -105,10 +105,10 @@ requires.append('trytond >= %s.%s, < %s.%s' %
 
 setup(name='trytond_nereid_catalog',
     version=info.get('version'),
-    description=info.get('description', ''),
-    author=info.get('author', ''),
-    author_email=info.get('email', ''),
-    url=info.get('website', ''),
+    description="Nereid Catalog",
+    author="Openlabs Technologies & consulting (P) Limited",
+    author_email='info@openlabs.co.in',
+    url='http://www.openlabs.co.in',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Plugins',
