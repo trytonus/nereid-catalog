@@ -17,7 +17,7 @@ from nereid.helpers import slugify, key_from_list, login_required, url_for, \
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
-from flaskext.babel import format_currency
+from flask.ext.babel import format_currency
 
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
