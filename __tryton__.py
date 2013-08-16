@@ -2,7 +2,7 @@
 #this repository contains the full copyright notices and license terms.
 {
     'name': 'Nereid Catalog',
-    'version': '2.4.0.2',
+    'version': '2.4.0.3',
     'author': 'Openlabs Technologies & Consulting (P) LTD',
     'email': 'info@openlabs.co.in',
     'website': 'http://www.openlabs.co.in/',
