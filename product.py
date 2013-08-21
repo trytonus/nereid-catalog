@@ -42,7 +42,7 @@ class Product:
     "Product extension for Nereid"
     __name__ = "product.product"
 
-    #: Decides the number of products that would be remebered. 
+    #: Decides the number of products that would be remebered.
     recent_list_size = 5
 
     #: The list of fields allowed to be sent back on a JSON response from the
@@ -53,28 +53,34 @@ class Product:
     #: .. versionadded:: 0.3
     json_allowed_fields = set(['name', 'sale_price', 'id', 'uri'])
 
-    uri = fields.Char('URI', select=True, on_change_with=['name', 'uri'],
-        states=DEFAULT_STATE2)
+    uri = fields.Char(
+        'URI', select=True, on_change_with=['name', 'uri'],
+        states=DEFAULT_STATE2
+    )
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
-
 
     image_sets = fields.One2Many(
         'product.product.imageset', 'product',
         'Image Sets', states=DEFAULT_STATE
     )
-    up_sells = fields.Many2Many('product.product-product.product',
-        'product', 'up_sell', 'Up-Sells', states=DEFAULT_STATE)
-    cross_sells = fields.Many2Many('product.product-product.product',
-        'product', 'cross_sell', 'Cross-Sells', states=DEFAULT_STATE)
+    up_sells = fields.Many2Many(
+        'product.product-product.product',
+        'product', 'up_sell', 'Up-Sells', states=DEFAULT_STATE
+    )
+    cross_sells = fields.Many2Many(
+        'product.product-product.product',
+        'product', 'cross_sell', 'Cross-Sells', states=DEFAULT_STATE
+    )
 
-    wishlist = fields.Many2Many('product.product-nereid.user',
-        'product', 'user', 'Wishlist')
+    wishlist = fields.Many2Many(
+        'product.product-nereid.user', 'product', 'user', 'Wishlist'
+    )
 
     browse_nodes = fields.Many2Many(
         'product.product-product.browse_node',
         'product', 'browse_node', 'Browse Nodes'
     )
-    #TODO: Create a functional many2many field for the sites 
+    #TODO: Create a functional many2many field for the sites
 
     @classmethod
     def __setup__(cls):
@@ -149,8 +155,8 @@ class Product:
                 for field in fields:
                     product_val[field] = getattr(product, field)
                 product_val['sale_price'] = format_currency(
-                        product.sale_price(),
-                        request.nereid_currency.code
+                    product.sale_price(),
+                    request.nereid_currency.code
                 )
                 response.append(product_val)
 
@@ -277,8 +283,7 @@ class Product:
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
             ('category', 'in', categories)
-            ]
-        )
+        ])
         return index.render()
 
     @classmethod
@@ -394,8 +399,8 @@ class BrowseNode(ModelSQL, ModelView):
     @classmethod
     def render(cls, uri, page=1):
         """
-        Renders a page of products in a browse node. The products displayed 
-        are not just the products of this browse node, but also those of the 
+        Renders a page of products in a browse node. The products displayed
+        are not just the products of this browse node, but also those of the
         descendants of the browse node. This is achieved through the MPTT
         implementation.
 
@@ -414,7 +419,7 @@ class BrowseNode(ModelSQL, ModelView):
         # TODO: Improve this implementation with the capability to define the
         # depth to which descendants must be shown. The selection of products
         # can also be improved with the help of a join and selecting from the
-        # relationship table rather than by first chosing the browse nodes, 
+        # relationship table rather than by first chosing the browse nodes,
         # and then the products (as done here)
         browse_node, = browse_nodes
         browse_nodes = cls.search([
@@ -453,7 +458,6 @@ class ProductBrowseNode(ModelSQL):
     browse_node = fields.Many2One(
         'product.browse_node', 'Browse Node',
         ondelete='CASCADE', select=True, required=True)
-
 
 
 class ProductsImageSet(ModelSQL, ModelView):
@@ -508,7 +512,8 @@ class ProductCategory:
     "Product Category extension for Nereid"
     __name__ = "product.category"
 
-    uri = fields.Char('URI', select=True,
+    uri = fields.Char(
+        'URI', select=True,
         on_change_with=['name', 'uri', 'parent'], states=DEFAULT_STATE2
     )
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?')
@@ -519,7 +524,7 @@ class ProductCategory:
     )
     sites = fields.Many2Many(
         'nereid.website-product.category',
-        'category', 'website', 'Sites',  states=DEFAULT_STATE
+        'category', 'website', 'Sites', states=DEFAULT_STATE
     )
 
     @classmethod
@@ -541,7 +546,7 @@ class ProductCategory:
         """
         if self.name and not self.uri:
             full_name = (self.parent and self.parent.rec_name or '') \
-                    + self.name
+                + self.name
             return slugify(full_name)
         return self.uri
 
@@ -572,7 +577,7 @@ class ProductCategory:
         if not categories:
             return NotFound('Product Category Not Found')
 
-        # if only one category is found then it is rendered and 
+        # if only one category is found then it is rendered and
         # if more than one are found then the first one is rendered
         category = categories[0]
         products = Pagination(Product, [
@@ -634,8 +639,7 @@ class ProductCategory:
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
             ('id', 'in', request.nereid_website.get_categories())
-            ]
-        )
+        ])
         return index.render()
 
     @classmethod
@@ -670,8 +674,8 @@ class WebSite:
 
     #: The root browse nodes are the main nodes from which the site navigation
     #: should begin. For example, the top navigation on the e-commerce site
-    #: could be these root browse nodes and the menu could expand to the 
-    #: children. While the utilisation of this field depends on how your 
+    #: could be these root browse nodes and the menu could expand to the
+    #: children. While the utilisation of this field depends on how your
     #: website and the template decides to use it, the concept aims to be a
     #: reference to identify the organisation of the catalog for a specific
     #: website.
@@ -699,7 +703,7 @@ class WebSite:
             Transaction().user,
             'nereid.website.get_categories',
             self.id,
-            ])
+        ])
         rv = cache.get(cache_key)
         if rv is None:
             rv = map(int, self.categories)

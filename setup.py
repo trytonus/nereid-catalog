@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#This file is part of Tryton and Nereid.  The COPYRIGHT file at the top level of
+#This file is part of Tryton and Nereid. The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 import re
 import os
@@ -97,13 +97,19 @@ requires = [
 ]
 for dep in info.get('depends', []):
     if not re.match(r'(ir|res|webdav)(\W|$)', dep):
-        requires.append('trytond_%s >= %s.%s, < %s.%s' %
-                (dep, major_version, minor_version, major_version,
-                    minor_version + 1))
-requires.append('trytond >= %s.%s, < %s.%s' %
-        (major_version, minor_version, major_version, minor_version + 1))
+        requires.append(
+            'trytond_%s >= %s.%s, < %s.%s' % (
+                dep, major_version, minor_version,
+                major_version, minor_version + 1
+            )
+        )
+requires.append(
+    'trytond >= %s.%s, < %s.%s' %
+    (major_version, minor_version, major_version, minor_version + 1)
+)
 
-setup(name='trytond_nereid_catalog',
+setup(
+    name='trytond_nereid_catalog',
     version=info.get('version'),
     description="Nereid Catalog",
     author="Openlabs Technologies & consulting (P) Limited",
@@ -129,7 +135,7 @@ setup(name='trytond_nereid_catalog',
         'trytond.modules.nereid_catalog.tests': 'tests',
     },
     package_data={
-        'trytond.modules.nereid_catalog': info.get('xml', []) \
+        'trytond.modules.nereid_catalog': info.get('xml', [])
                 + ['tryton.cfg', 'locale/*.po', 'tests/*.rst']
                 + ['i18n/*.pot', 'i18n/pt_BR/LC_MESSAGES/*'],
     },

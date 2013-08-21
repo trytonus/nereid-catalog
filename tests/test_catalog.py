@@ -160,15 +160,18 @@ class TestCatalog(NereidTestCase):
             'localhost/login.jinja':
                 '{{ login_form.errors }} {{get_flashed_messages()}}',
             'localhost/product-list.jinja':
-                '{% for product in products %}|{{ product.name }}|{% endfor %}',
+                '{% for product in products %}'
+                '|{{ product.name }}|{% endfor %}',
             'localhost/category.jinja':
-                '{% for product in products %}|{{ product.name }}|{% endfor %}',
+                '{% for product in products %}'
+                '|{{ product.name }}|{% endfor %}',
             'localhost/category-list.jinja':
                 '{%- for category in categories %}'
                 '|{{ category.name }}|'
                 '{%- endfor %}',
             'localhost/search-results.jinja':
-                '{% for product in products %}|{{ product.name }}|{% endfor %}',
+                '{% for product in products %}'
+                '|{{ product.name }}|{% endfor %}',
             'localhost/product.jinja': '{{ product.sale_price(product.id) }}',
             'localhost/wishlist.jinja':
                 '{% for product in products %}|{{ product.uri }}|{% endfor %}',
