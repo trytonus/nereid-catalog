@@ -8,7 +8,11 @@
 
 '''
 from trytond.pool import Pool
-from .product import *
+from product import (
+    Product, BrowseNode, ProductBrowseNode, ProductsImageSet,
+    ProductUser, ProductsRelated, ProductCategory, WebSite, NereidUser,
+    WebsiteCategory, WebsiteBrowseNode
+)
 
 
 def register():
