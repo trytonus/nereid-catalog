@@ -12,8 +12,8 @@ from collections import deque
 
 from nereid import render_template, cache, flash, redirect, abort
 from nereid.globals import session, request, current_app
-from nereid.helpers import slugify, key_from_list, login_required, url_for, \
-    jsonify
+from nereid.helpers import slugify, key_from_list, login_required, url_for
+from nereid import jsonify
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
@@ -51,10 +51,10 @@ class Product:
     #: The `name`, `sale_price`, `id` and `uri` are sent by default
     #:
     #: .. versionadded:: 0.3
-    json_allowed_fields = set(['name', 'sale_price', 'id', 'uri'])
+    json_allowed_fields = {'rec_name', 'sale_price', 'id', 'uri'}
 
     uri = fields.Char(
-        'URI', select=True, on_change_with=['name', 'uri'],
+        'URI', select=True, on_change_with=['template', 'uri'],
         states=DEFAULT_STATE2
     )
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
@@ -96,10 +96,10 @@ class Product:
 
     def on_change_with_uri(self):
         """
-        If the URI is empty and the name is there, slugify name into URI
+        If the URI is empty, slugify template name into URI
         """
-        if self.name and not self.uri:
-            return slugify(self.name)
+        if not self.uri:
+            return slugify(self.template.name)
         return self.uri
 
     @classmethod
@@ -112,7 +112,7 @@ class Product:
         products = cls.search([
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
-            ('category', 'in', categories),
+            ('template.category', 'in', categories),
         ], limit=1)
         if not products:
             return NotFound('Product Not Found')
@@ -219,7 +219,7 @@ class Product:
         categories = request.nereid_website.get_categories() + [None]
         products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-            ('category', 'in', categories),
+            ('template.category', 'in', categories),
         ], page, cls.per_page)
         return render_template('product-list.jinja', products=products)
 
@@ -269,8 +269,8 @@ class Product:
         categories = request.nereid_website.get_categories() + [None]
         products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-            ('category', 'in', categories),
-            ('name', 'ilike', '%' + query + '%'),
+            ('template.category', 'in', categories),
+            ('template.name', 'ilike', '%' + query + '%'),
         ], page, cls.per_page)
         return render_template('search-results.jinja', products=products)
 
@@ -282,7 +282,7 @@ class Product:
         categories = request.nereid_website.get_categories() + [None]
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
-            ('category', 'in', categories)
+            ('template.category', 'in', categories)
         ])
         return index.render()
 
@@ -556,7 +556,7 @@ class ProductCategory:
         """Update the uri of the category from the complete name.
         """
         for category in categories:
-            cls.write(category.id, {'uri': slugify(category.rec_name)})
+            cls.write([category], {'uri': slugify(category.rec_name)})
 
     @classmethod
     def render(cls, uri, page=1):
