@@ -20,17 +20,17 @@
                             <field name="displayed_on_eshop"/>
                             <label name="uri"/>
                             <field name="uri"/>
-                            <button name="update_uri" string="Update URI" 
+                            <button name="update_uri" string="Update URI"
                                 colspan="2"/>
                             <label name="image"/>
                             <field name="image"/>
                             <newline />
-                            <separator 
-                                colspan="2" 
+                            <separator
+                                colspan="2"
                                 string="Sites"
                                 id="sepr_sites"/>
-                            <separator 
-                                colspan="2" 
+                            <separator
+                                colspan="2"
                                 string="Description"
                                 id="sepr_desc"/>
                             <field name="sites" colspan="2"/>
@@ -48,9 +48,19 @@
             <field name="arch" type="xml">
                 <![CDATA[
                 <data>
-                    <xpath expr="/form/notebook/page[@id=&quot;general&quot;]"
-                            position="after">
-                        <page string="E-Commerce Details" 
+                    <xpath expr="/form/separator[@name=&quot;description&quot;]"
+                        position="replace">
+                    </xpath>
+                    <xpath expr="/form/field[@name=&quot;description&quot;]"
+                        position="replace">
+                    </xpath>
+                    <xpath expr="/form/field[@name=&quot;active&quot;]" position="after">
+                      <notebook colspan="6" >
+                        <page string="Description" col="4" id="desc">
+                            <separator name="description" colspan="6"/>
+                            <field name="description" colspan="6"/>
+                        </page>
+                        <page string="E-Commerce Details"
                                 col="4" id="ecomm_det">
                             <label name="displayed_on_eshop"/>
                             <field name="displayed_on_eshop"/>
@@ -58,17 +68,15 @@
                               <field name="uri"/>
                               <newline />
                               <notebook colspan="4" >
-                                <page string="Related Products" col="4" 
+                                <page string="Related Products" col="4"
                                   id="related_products" >
-                                  <separator 
-                                    colspan="4" 
-                                    string="Up-Sells" 
-                                    id="sepr_up_sells"/>
+                                  <separator colspan="4" string="Up-Sells"
+                                      id="sepr_up_sells"/>
                                   <field name="up_sells" colspan="4" />
                                   <newline />
-                                  <separator 
-                                    colspan="4" 
-                                    string="Cross-Sells" 
+                                  <separator
+                                    colspan="4"
+                                    string="Cross-Sells"
                                     id="sepr_cross_sells"/>
                                   <field name="cross_sells" colspan="4" />
                                 </page>
@@ -79,38 +87,17 @@
                                 </page>
                                 <page string="Browse Nodes" id="addl_info" >
                                   <field name="browse_nodes" colspan="4"/>
-                                  <separator 
-                                    colspan="4" 
-                                    string="Wishlist" 
+                                  <separator
+                                    colspan="4"
+                                    string="Wishlist"
                                     id="sepr_wishlist"/>
                                   <field name="wishlist" colspan="4"/>
                                 </page>
                               </notebook>
                         </page>
+                      </notebook>
                     </xpath>
                 </data>
-                ]]>
-            </field>
-        </record>
-
-        <record model="ir.ui.view" id="nereid_user_view_form_wishlist">
-            <field name="model">nereid.user</field>
-            <field name="type">form</field>
-            <field name="inherit" ref="nereid.nereid_user_form"/>
-            <field name="arch" type="xml">
-                <![CDATA[
-                <data>
-                    <xpath expr="/form/notebook/page[@string='Accounting']" position="after">
-                        <page string="Wishlist" id="wishlist">
-                            <newline/>
-                            <separator 
-                            colspan="4" 
-                            string="Wishlist" 
-                            id="sepr_wishlist"/>
-                            <field name="wishlist" colspan="4"/>
-                        </page>
-                    </xpath>
-                </data>  
                 ]]>
             </field>
         </record>
