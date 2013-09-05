@@ -112,7 +112,7 @@ class Product:
         products = cls.search([
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
-            ('template.category', 'in', categories),
+            ('category', 'in', categories),
         ], limit=1)
         if not products:
             return NotFound('Product Not Found')
@@ -219,7 +219,7 @@ class Product:
         categories = request.nereid_website.get_categories() + [None]
         products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-            ('template.category', 'in', categories),
+            ('category', 'in', categories),
         ], page, cls.per_page)
         return render_template('product-list.jinja', products=products)
 
@@ -269,8 +269,8 @@ class Product:
         categories = request.nereid_website.get_categories() + [None]
         products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-            ('template.category', 'in', categories),
-            ('template.name', 'ilike', '%' + query + '%'),
+            ('category', 'in', categories),
+            ('name', 'ilike', '%' + query + '%'),
         ], page, cls.per_page)
         return render_template('search-results.jinja', products=products)
 
@@ -282,7 +282,7 @@ class Product:
         categories = request.nereid_website.get_categories() + [None]
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
-            ('template.category', 'in', categories)
+            ('category', 'in', categories)
         ])
         return index.render()
 
