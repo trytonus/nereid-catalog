@@ -306,6 +306,23 @@ class Product:
         """
         return url_for('product.product.render', uri=self.uri, **kwargs)
 
+    def _json(self):
+        """
+        Return a JSON serializable dictionary of the product
+        """
+        response = {
+            'template': {
+                'name': self.template.rec_name,
+                'id': self.template.id,
+                'list_price': self.list_price,
+            },
+            'code': self.code,
+            'description': self.description,
+        }
+        if self.category:
+            response['category'] = self.category._json()
+        return response
+
 
 class BrowseNode(ModelSQL, ModelView):
     """
@@ -657,6 +674,16 @@ class ProductCategory:
         return url_for(
             'product.category.render', uri=self.uri, **kwargs
         )
+
+    def _json(self):
+        """
+        Return a JSON serializable dictionary of the category
+        """
+        return {
+            'name': self.name,
+            'id': self.id,
+            'rec_name': self.rec_name,
+        }
 
 
 class WebSite:
