@@ -51,7 +51,7 @@ class Product:
     #: The `name`, `sale_price`, `id` and `uri` are sent by default
     #:
     #: .. versionadded:: 0.3
-    json_allowed_fields = {'rec_name', 'sale_price', 'id', 'uri'}
+    json_allowed_fields = set(['rec_name', 'sale_price', 'id', 'uri'])
 
     uri = fields.Char(
         'URI', select=True, on_change_with=['template', 'uri'],
