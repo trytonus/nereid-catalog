@@ -66,12 +66,18 @@ class TestProduct(NereidTestCase):
         # Create website
         url_map, = self.UrlMap.search([], limit=1)
         en_us, = self.Language.search([('code', '=', 'en_US')])
+
+        self.locale_en_us, = self.Locale.create([{
+            'code': 'en_US',
+            'language': en_us.id,
+            'currency': usd.id,
+        }])
         self.NereidWebsite.create([{
             'name': 'localhost',
             'url_map': url_map.id,
             'company': company.id,
             'application_user': USER,
-            'default_language': en_us.id,
+            'default_locale': self.locale_en_us.id,
             'guest_user': guest_user,
             'categories': [('set', [self.category.id])],
             'currencies': [('set', [usd.id])],
@@ -96,6 +102,7 @@ class TestProduct(NereidTestCase):
         self.Category = POOL.get('product.category')
         self.Template = POOL.get('product.template')
         self.Uom = POOL.get('product.uom')
+        self.Locale = POOL.get('nereid.website.locale')
 
         self.templates = {
             'home.jinja':
@@ -154,14 +161,14 @@ class TestProduct(NereidTestCase):
 
             with app.test_client() as c:
                 # Render all products
-                rv = c.get('/en_US/products')
+                rv = c.get('/products')
                 self.assertEqual(rv.data, '2')
 
                 # Render product with uri
-                rv = c.get('/en_US/product/product-1')
+                rv = c.get('/product/product-1')
                 self.assertEqual(rv.data, 'Product-1')
 
-                rv = c.get('/en_US/product/product-2')
+                rv = c.get('/product/product-2')
                 self.assertEqual(rv.data, 'Product-2')
 
 
