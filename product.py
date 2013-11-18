@@ -51,7 +51,7 @@ class Product:
     #: The `name`, `sale_price`, `id` and `uri` are sent by default
     #:
     #: .. versionadded:: 0.3
-    json_allowed_fields = {'rec_name', 'sale_price', 'id', 'uri'}
+    json_allowed_fields = set(['rec_name', 'sale_price', 'id', 'uri'])
 
     uri = fields.Char(
         'URI', select=True, on_change_with=['template', 'uri'],
@@ -305,6 +305,23 @@ class Product:
         This method works only under a nereid request context
         """
         return url_for('product.product.render', uri=self.uri, **kwargs)
+
+    def _json(self):
+        """
+        Return a JSON serializable dictionary of the product
+        """
+        response = {
+            'template': {
+                'name': self.template.rec_name,
+                'id': self.template.id,
+                'list_price': self.list_price,
+            },
+            'code': self.code,
+            'description': self.description,
+        }
+        if self.category:
+            response['category'] = self.category._json()
+        return response
 
 
 class BrowseNode(ModelSQL, ModelView):
@@ -657,6 +674,16 @@ class ProductCategory:
         return url_for(
             'product.category.render', uri=self.uri, **kwargs
         )
+
+    def _json(self):
+        """
+        Return a JSON serializable dictionary of the category
+        """
+        return {
+            'name': self.name,
+            'id': self.id,
+            'rec_name': self.rec_name,
+        }
 
 
 class WebSite:
