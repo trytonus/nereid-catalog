@@ -119,12 +119,18 @@ class TestCatalog(NereidTestCase):
         # Create website
         url_map, = self.UrlMap.search([], limit=1)
         en_us, = self.Language.search([('code', '=', 'en_US')])
+
+        self.locale_en_us, = self.Locale.create([{
+            'code': 'en_US',
+            'language': en_us.id,
+            'currency': usd.id,
+        }])
         self.NereidWebsite.create([{
             'name': 'localhost',
             'url_map': url_map.id,
             'company': company.id,
             'application_user': USER,
-            'default_language': en_us.id,
+            'default_locale': self.locale_en_us.id,
             'guest_user': guest_user,
             'categories': [('set', [category.id, category2.id])],
             'currencies': [('set', [usd.id])],
@@ -189,6 +195,7 @@ class TestCatalog(NereidTestCase):
         self.Language = POOL.get('ir.lang')
         self.NereidWebsite = POOL.get('nereid.website')
         self.Party = POOL.get('party.party')
+        self.Locale = POOL.get('nereid.website.locale')
 
         self.templates = {
             'home.jinja':
@@ -241,7 +248,7 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                rv = c.get('/en_US/product/product-1')
+                rv = c.get('/product/product-1')
                 self.assertEqual(rv.data, '10')
 
     def test_0020_list_view(self):
@@ -253,7 +260,7 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                rv = c.get('/en_US/products')
+                rv = c.get('/products')
                 self.assertEqual(rv.data, '|product 1||product 2|')
 
     def test_0030_category(self):
@@ -265,13 +272,13 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                rv = c.get('/en_US/category/category')
+                rv = c.get('/category/category')
                 self.assertEqual(rv.data, '|product 1|')
 
-                rv = c.get('/en_US/category/category2')
+                rv = c.get('/category/category2')
                 self.assertEqual(rv.data, '|product 2|')
 
-                rv = c.get('/en_US/category/category3')
+                rv = c.get('/category/category3')
                 self.assertEqual(rv.status_code, 404)
 
     def test_0035_category_list(self):
@@ -283,7 +290,7 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                rv = c.get('/en_US/catalog')
+                rv = c.get('/catalog')
                 self.assertEqual(rv.data, '|Category||Category 2|')
 
     def test_0040_quick_search(self):
@@ -295,7 +302,7 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                rv = c.get('/en_US/search?q=product')
+                rv = c.get('/search?q=product')
                 self.assertEqual(rv.data, '|product 1||product 2|')
 
     def test_0050_product_sitemap_index(self):
@@ -307,17 +314,17 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                rv = c.get('/en_US/sitemaps/product-index.xml')
+                rv = c.get('/sitemaps/product-index.xml')
                 xml = objectify.fromstring(rv.data)
                 self.assertTrue(xml.tag.endswith('sitemapindex'))
                 self.assertEqual(len(xml.getchildren()), 1)
 
                 self.assertEqual(
                     xml.sitemap.loc.pyval.split('localhost', 1)[-1],
-                    '/en_US/sitemaps/product-1.xml'
+                    '/sitemaps/product-1.xml'
                 )
 
-                rv = c.get('/en_US/sitemaps/product-1.xml')
+                rv = c.get('/sitemaps/product-1.xml')
                 xml = objectify.fromstring(rv.data)
                 self.assertTrue(xml.tag.endswith('urlset'))
                 self.assertEqual(len(xml.getchildren()), 2)
@@ -331,7 +338,7 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                rv = c.get('/en_US/sitemaps/category-index.xml')
+                rv = c.get('/sitemaps/category-index.xml')
                 xml = objectify.fromstring(rv.data)
                 self.assertTrue(xml.tag.endswith('sitemapindex'))
                 self.assertEqual(len(xml.getchildren()), 1)
@@ -354,16 +361,16 @@ class TestCatalog(NereidTestCase):
             )
 
             with app.test_client() as c:
-                rv = c.get('/en_US/products/+recent')
+                rv = c.get('/products/+recent')
                 self.assertEqual(json.loads(rv.data)['products'], [])
 
-                rv = c.get('/en_US/product/product-1')
-                rv = c.get('/en_US/products/+recent')
+                rv = c.get('/product/product-1')
+                rv = c.get('/products/+recent')
                 self.assertEqual(len(json.loads(rv.data)['products']), 1)
 
-                rv = c.post('/en_US/products/+recent', data={'product_id': 2})
+                rv = c.post('/products/+recent', data={'product_id': 2})
                 self.assertEqual(len(json.loads(rv.data)['products']), 2)
-                rv = c.get('/en_US/products/+recent')
+                rv = c.get('/products/+recent')
                 self.assertEqual(len(json.loads(rv.data)['products']), 2)
 
     def test_0080_displayed_on_eshop(self):
@@ -374,7 +381,7 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                rv = c.get('/en_US/product/product-4')
+                rv = c.get('/product/product-4')
                 self.assertEqual(rv.status_code, 404)
 
     def test_0090_add_to_wishlist(self):
@@ -385,22 +392,22 @@ class TestCatalog(NereidTestCase):
             app = self.get_app()
 
             with app.test_client() as c:
-                c.post('/en_US/login', data={
+                c.post('/login', data={
                     'email': 'email@example.com',
                     'password': 'password',
                 })
                 c.post(
-                    '/en_US/products/add-to-wishlist',
+                    '/products/add-to-wishlist',
                     data={'product': 1}
                 )
-                rv = c.get('/en_US/products/view-wishlist')
+                rv = c.get('/products/view-wishlist')
                 self.assertEqual(rv.data, '|product-1|')
 
                 c.post(
-                    '/en_US/products/add-to-wishlist',
+                    '/products/add-to-wishlist',
                     data={'product': 2}
                 )
-                rv = c.get('/en_US/products/view-wishlist')
+                rv = c.get('/products/view-wishlist')
                 self.assertEqual(rv.data, '|product-1||product-2|')
 
 
