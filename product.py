@@ -344,6 +344,9 @@ class ProductCategory:
         'nereid.static.file', 'Image',
         states=DEFAULT_STATE
     )
+    image_preview = fields.Function(
+        fields.Binary('Image Preview'), 'get_image_preview'
+    )
     sites = fields.Many2Many(
         'nereid.website-product.category',
         'category', 'website', 'Sites', states=DEFAULT_STATE
@@ -360,6 +363,11 @@ class ProductCategory:
     @staticmethod
     def default_displayed_on_eshop():
         return True
+
+    def get_image_preview(self, name=None):
+        if self.image:
+            return self.image.file_binary
+        return None
 
     def on_change_with_uri(self):
         """Slugifies the full name of a category to
