@@ -10,9 +10,9 @@
 '''
 from collections import deque
 
-from nereid import render_template, cache, flash, redirect, abort
+from nereid import render_template, cache
 from nereid.globals import session, request, current_app
-from nereid.helpers import slugify, key_from_list, login_required, url_for
+from nereid.helpers import slugify, key_from_list, url_for
 from nereid import jsonify
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
@@ -24,11 +24,11 @@ from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 
-from .i18n import _
 
-__all__ = ['Product', 'BrowseNode', 'ProductBrowseNode', 'ProductsImageSet',
-           'ProductUser', 'ProductsRelated', 'ProductCategory', 'WebSite',
-           'NereidUser', 'WebsiteCategory', 'WebsiteBrowseNode']
+__all__ = [
+    'Product', 'ProductsImageSet', 'ProductsRelated', 'ProductCategory',
+    'WebSite', 'WebsiteCategory'
+]
 __metaclass__ = PoolMeta
 
 DEFAULT_STATE = {'invisible': Not(Bool(Eval('displayed_on_eshop')))}
@@ -72,16 +72,6 @@ class Product:
         'product', 'cross_sell', 'Cross-Sells', states=DEFAULT_STATE
     )
 
-    wishlist = fields.Many2Many(
-        'product.product-nereid.user', 'product', 'user', 'Wishlist'
-    )
-
-    browse_nodes = fields.Many2Many(
-        'product.product-product.browse_node',
-        'product', 'browse_node', 'Browse Nodes'
-    )
-    #TODO: Create a functional many2many field for the sites
-
     @classmethod
     def __setup__(cls):
         super(Product, cls).__setup__()
@@ -92,7 +82,7 @@ class Product:
 
     @staticmethod
     def default_displayed_on_eshop():
-        return True
+        return False
 
     def on_change_with_uri(self):
         """
@@ -241,25 +231,6 @@ class Product:
         return self.list_price
 
     @classmethod
-    @login_required
-    def add_to_wishlist(cls):
-        """
-        Add the product to wishlist
-
-        .. versionchanged::2.6.0.1
-
-            Only POST method can now be used to add products to wishlist.
-        """
-        cls.write(
-            [cls(request.form.get('product', type=int))],
-            {'wishlist': [('add', [request.nereid_user.id])]}
-        )
-        if request.is_xhr:
-            return 'OK'
-        flash(_("The product has been added to wishlist"))
-        return redirect(url_for('nereid.user.render_wishlist'))
-
-    @classmethod
     def quick_search(cls):
         """A quick and dirty search which searches through the product.product
         for an insensitive like and returns a pagination object the same.
@@ -324,160 +295,6 @@ class Product:
         return response
 
 
-class BrowseNode(ModelSQL, ModelView):
-    """
-    Browse nodes are similar to categories to which products belong but with
-    the difference that a product may belong to several browse nodes (product
-    can only belong to one category).
-
-    The limitation that a product can belong only to one category originates
-    in the early design decisions of Tryton, where a category of a product
-    could determine the expense, revenue or even taxation related accounts of
-    the products under it.
-
-    The word `Browse Node` was inspired by the design of Amazon's catalog. The
-    entire hierarchy of products that we see on amazon are infact browse nodes.
-
-    Browse nodes are meant to be seen more like tags of a product, and each
-    tag is part of a hierarchy. This gives users the option to infact even use
-    browse nodes in-lieu of categories.
-    """
-    __name__ = "product.browse_node"
-
-    name = fields.Char('Name', required=True, translate=True)
-    uri = fields.Char(
-        'URI', depends=['displayed_on_eshop'], states=DEFAULT_STATE2
-    )
-    displayed_on_eshop = fields.Boolean('Displayed on E-Shop?')
-    code = fields.Char('Code')
-    description = fields.Text("Description")
-    products = fields.Many2Many(
-        'product.product-product.browse_node',
-        'browse_node', 'product', 'Products'
-    )
-
-    # Fields for hierarchy
-    parent = fields.Many2One(
-        'product.browse_node', 'Parent', select=True,
-        left="left", right="right", ondelete="RESTRICT"
-    )
-    children = fields.One2Many('product.browse_node', 'parent', 'Children')
-    left = fields.Integer("Left", select=True)
-    right = fields.Integer("Right", select=True)
-
-    #: The `nereid.website`s in which this browse node is a root node.
-    sites = fields.Many2Many(
-        'nereid.website-product.browse_node',
-        'browse_node', 'website', 'Root node in Sites',
-        states=DEFAULT_STATE
-    )
-
-    #: Products displayed per page when paginated.
-    products_per_page = 20
-
-    @classmethod
-    def __setup__(cls):
-        super(BrowseNode, cls).__setup__()
-        cls._sql_constraints += [
-            ('uri', 'UNIQUE(uri)', 'URI of Browse Node must be unique.')
-        ]
-        cls._buttons.update({
-            'update_uri': {
-                'invisible': Not(Bool(Eval('displayed_on_eshop')))
-            }
-        })
-
-    @classmethod
-    def validate(cls, browse_nodes):
-        super(BrowseNode, cls).validate(browse_nodes)
-        cls.check_recursion(browse_nodes, rec_name='name')
-
-    @staticmethod
-    def default_left():
-        return 0
-
-    @staticmethod
-    def default_right():
-        return 0
-
-    def get_rec_name(self, name=None):
-        if self.parent:
-            return self.parent.rec_name + ' / ' + self.name
-        return self.name
-
-    @classmethod
-    @ModelView.button
-    def update_uri(cls, browse_nodes):
-        """
-        Update the uri of the browse node from the rec_name.
-        """
-        for browse_node in browse_nodes:
-            cls.write([browse_node], {'uri': slugify(browse_node.rec_name)})
-
-    @classmethod
-    def render(cls, uri, page=1):
-        """
-        Renders a page of products in a browse node. The products displayed
-        are not just the products of this browse node, but also those of the
-        descendants of the browse node. This is achieved through the MPTT
-        implementation.
-
-        :param uri: uri of the browse node to be shown
-        :param page: page of the products to be displayed
-        """
-        Product = Pool().get('product.product')
-
-        browse_nodes = cls.search([
-            ('displayed_on_eshop', '=', True),
-            ('uri', '=', uri),
-        ], limit=1)
-        if not browse_nodes:
-            return abort(404)
-
-        # TODO: Improve this implementation with the capability to define the
-        # depth to which descendants must be shown. The selection of products
-        # can also be improved with the help of a join and selecting from the
-        # relationship table rather than by first chosing the browse nodes,
-        # and then the products (as done here)
-        browse_node, = browse_nodes
-        browse_nodes = cls.search([
-            ('left', '>=', browse_node.left),
-            ('right', '<=', browse_node.right),
-        ])
-        products = Pagination(Product, [
-            ('displayed_on_eshop', '=', True),
-            ('browse_nodes', 'in', map(int, browse_nodes)),
-        ], page=page, per_page=cls.products_per_page)
-        return render_template(
-            'browse-node.jinja', browse_node=browse_node, products=products
-        )
-
-    @classmethod
-    def render_list(cls, page=1):
-        """
-        Renders the list of all browse nodes which are displayed_on_shop=True
-        """
-        browse_nodes = Pagination(cls, [
-            ('displayed_on_eshop', '=', True),
-        ], page, cls.products_per_page)
-        return render_template(
-            'browse-node-list.jinja', browse_nodes=browse_nodes
-        )
-
-
-class ProductBrowseNode(ModelSQL):
-    "Product BrowseNode Relation"
-    __name__ = 'product.product-product.browse_node'
-    _table = 'product_browse_node_rel'
-
-    product = fields.Many2One(
-        'product.product', 'Product',
-        ondelete='CASCADE', select=True, required=True)
-    browse_node = fields.Many2One(
-        'product.browse_node', 'Browse Node',
-        ondelete='CASCADE', select=True, required=True)
-
-
 class ProductsImageSet(ModelSQL, ModelView):
     "Images for Product"
     __name__ = 'product.product.imageset'
@@ -495,19 +312,6 @@ class ProductsImageSet(ModelSQL, ModelView):
     large_image = fields.Many2One(
         'nereid.static.file', 'Large Image',
         ondelete='CASCADE', select=True)
-
-
-class ProductUser(ModelSQL):
-    "Product Wishlist"
-    __name__ = 'product.product-nereid.user'
-    _table = 'product_user_rel'
-
-    product = fields.Many2One(
-        'product.product', 'Product',
-        ondelete='CASCADE', select=True, required=True)
-    user = fields.Many2One(
-        'nereid.user', 'User',
-        ondelete='CASCADE', select=True, required=True)
 
 
 class ProductsRelated(ModelSQL):
@@ -689,8 +493,7 @@ class ProductCategory:
 
 class WebSite:
     """
-    Extend site to add templates for product listing and
-    category listing
+    Add categories for products
     """
     __name__ = 'nereid.website'
 
@@ -698,29 +501,6 @@ class WebSite:
         'nereid.website-product.category',
         'website', 'category', 'Categories Displayed on E-Shop',
         domain=[('displayed_on_eshop', '=', True)]
-    )
-
-    #: The root browse nodes are the main nodes from which the site navigation
-    #: should begin. For example, the top navigation on the e-commerce site
-    #: could be these root browse nodes and the menu could expand to the
-    #: children. While the utilisation of this field depends on how your
-    #: website and the template decides to use it, the concept aims to be a
-    #: reference to identify the organisation of the catalog for a specific
-    #: website.
-    browse_nodes = fields.Many2Many(
-        'nereid.website-product.browse_node',
-        'website', 'browse_node', 'Root Browse Nodes',
-        domain=[('displayed_on_eshop', '=', True)]
-    )
-
-    featured_products_node = fields.Many2One(
-        'product.browse_node', 'Featured Products Node'
-    )
-    latest_products_node = fields.Many2One(
-        'product.browse_node', 'Latest Products Node'
-    )
-    upcoming_products_node = fields.Many2One(
-        'product.browse_node', 'Upcoming Products Node'
     )
 
     def get_categories(self):
@@ -739,25 +519,6 @@ class WebSite:
         return rv
 
 
-class NereidUser:
-    """Extend User to have product wishlist"""
-    __name__ = 'nereid.user'
-
-    wishlist = fields.Many2Many(
-        'product.product-nereid.user', 'user', 'product', 'Wishlist'
-    )
-
-    @classmethod
-    @login_required
-    def render_wishlist(cls):
-        """
-        Render a template with the items in wishlist
-        """
-        return render_template(
-            'wishlist.jinja', products=request.nereid_user.wishlist
-        )
-
-
 class WebsiteCategory(ModelSQL):
     "Categories to be displayed on a website"
     __name__ = 'nereid.website-product.category'
@@ -768,17 +529,4 @@ class WebsiteCategory(ModelSQL):
         ondelete='CASCADE', select=True, required=True)
     category = fields.Many2One(
         'product.category', 'Category',
-        ondelete='CASCADE', select=True, required=True)
-
-
-class WebsiteBrowseNode(ModelSQL):
-    "Root Browse Nodes on a Website"
-    __name__ = 'nereid.website-product.browse_node'
-    _table = 'website_browse_node_rel'
-
-    website = fields.Many2One(
-        'nereid.website', 'Website',
-        ondelete='CASCADE', select=True, required=True)
-    browse_node = fields.Many2One(
-        'product.browse_node', 'Browse Node',
         ondelete='CASCADE', select=True, required=True)

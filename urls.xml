@@ -34,39 +34,6 @@
             <field name="url_map" ref="nereid.default_url_map" />
         </record>
 
-        <!-- Browse Nodes -->
-        <record id="nodes" model="nereid.url_rule">
-            <field name="rule">/nodes</field>
-            <field name="endpoint">product.browse_node.render_list</field>
-            <field name="sequence" eval="140" />
-            <field name="http_method_get" eval="True"/>
-            <field name="url_map" ref="nereid.default_url_map" />
-        </record>
-
-        <record id="nodes_page" model="nereid.url_rule">
-            <field name="rule">/nodes/&lt;int:page&gt;</field>
-            <field name="endpoint">product.browse_node.render_list</field>
-            <field name="sequence" eval="120" />
-            <field name="http_method_get" eval="True"/>
-            <field name="url_map" ref="nereid.default_url_map" />
-        </record>
-
-        <record id="node_uri" model="nereid.url_rule">
-            <field name="rule">/node/&lt;uri&gt;</field>
-            <field name="endpoint">product.browse_node.render</field>
-            <field name="sequence" eval="140" />
-            <field name="http_method_get" eval="True"/>
-            <field name="url_map" ref="nereid.default_url_map" />
-        </record>
-
-        <record id="node_uri_page" model="nereid.url_rule">
-            <field name="rule">/node/&lt;uri&gt;/&lt;int:page&gt;</field>
-            <field name="endpoint">product.browse_node.render</field>
-            <field name="sequence" eval="160" />
-            <field name="http_method_get" eval="True"/>
-            <field name="url_map" ref="nereid.default_url_map" />
-        </record>
-
         <record id="product_recent" model="nereid.url_rule">
             <field name="rule">/products/+recent</field>
             <field name="endpoint">product.product.recent_products</field>
@@ -144,22 +111,6 @@
             <field name="rule">/sitemaps/category-&lt;int:page&gt;.xml</field>
             <field name="endpoint">product.category.sitemap</field>
             <field name="sequence" eval="250" />
-            <field name="http_method_get" eval="True"/>
-            <field name="url_map" ref="nereid.default_url_map" />
-        </record>
-        
-        <record id="wishlist" model="nereid.url_rule">
-            <field name="rule">/products/add-to-wishlist</field>
-            <field name="endpoint">product.product.add_to_wishlist</field>
-            <field name="sequence" eval="260" />
-            <field name="http_method_post" eval="True"/>
-            <field name="url_map" ref="nereid.default_url_map" />
-        </record>
-        
-        <record id="wishlist_page" model="nereid.url_rule">
-            <field name="rule">/products/view-wishlist</field>
-            <field name="endpoint">nereid.user.render_wishlist</field>
-            <field name="sequence" eval="270" />
             <field name="http_method_get" eval="True"/>
             <field name="url_map" ref="nereid.default_url_map" />
         </record>

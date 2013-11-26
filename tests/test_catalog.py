@@ -216,8 +216,6 @@ class TestCatalog(NereidTestCase):
                 '{% for product in products %}'
                 '|{{ product.name }}|{% endfor %}',
             'product.jinja': '{{ product.sale_price(product.id) }}',
-            'wishlist.jinja':
-                '{% for product in products %}|{{ product.uri }}|{% endfor %}',
         }
 
     def get_template_source(self, name):
@@ -383,32 +381,6 @@ class TestCatalog(NereidTestCase):
             with app.test_client() as c:
                 rv = c.get('/product/product-4')
                 self.assertEqual(rv.status_code, 404)
-
-    def test_0090_add_to_wishlist(self):
-        '''Test adding products to wishlist
-        '''
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            app = self.get_app()
-
-            with app.test_client() as c:
-                c.post('/login', data={
-                    'email': 'email@example.com',
-                    'password': 'password',
-                })
-                c.post(
-                    '/products/add-to-wishlist',
-                    data={'product': 1}
-                )
-                rv = c.get('/products/view-wishlist')
-                self.assertEqual(rv.data, '|product-1|')
-
-                c.post(
-                    '/products/add-to-wishlist',
-                    data={'product': 2}
-                )
-                rv = c.get('/products/view-wishlist')
-                self.assertEqual(rv.data, '|product-1||product-2|')
 
 
 def suite():
