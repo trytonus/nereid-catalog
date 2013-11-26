@@ -193,6 +193,7 @@
                 <tree string="Product Browse Nodes" keyword_open="1">
                     <field name="name" />
                     <field name="parent" tree_invisible="1" />
+                    <field name="children" tree_invisible="1"/>
                 </tree>
                 ]]>
             </field>
@@ -232,6 +233,16 @@
                 </form>
                 ]]>
             </field>
+        </record>
+
+        <record model="ir.translation" id="product_browsenode_recursion_error">
+            <field name="name">product.browse_node</field>
+            <field name="lang">en_US</field>
+            <field name="type">error</field>
+            <field name="src">recursion_error</field>
+            <field name="value">Recursion error: Browse node "%(rec_name)s" with parent "%(parent_rec_name)s" was configured as ancestor of itself.</field>
+            <field name="module">nereid_catalog</field>
+            <field name="fuzzy" eval="False"/>
         </record>
 
         <record model="ir.action.act_window" id="act_browse_node_tree">

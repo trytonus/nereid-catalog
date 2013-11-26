@@ -381,15 +381,16 @@ class BrowseNode(ModelSQL, ModelView):
         cls._sql_constraints += [
             ('uri', 'UNIQUE(uri)', 'URI of Browse Node must be unique.')
         ]
-        cls._constraints += [
-            ('check_recursion', 'recursive_nodes'),
-        ]
-        cls._error_messages.update({
-            'recursive_nodes': 'You cannot create recursive browse nodes!',
-        })
         cls._buttons.update({
-            'update_uri': {}
+            'update_uri': {
+                'invisible': Not(Bool(Eval('displayed_on_eshop')))
+            }
         })
+
+    @classmethod
+    def validate(cls, browse_nodes):
+        super(BrowseNode, cls).validate(browse_nodes)
+        cls.check_recursion(browse_nodes, rec_name='name')
 
     @staticmethod
     def default_left():
