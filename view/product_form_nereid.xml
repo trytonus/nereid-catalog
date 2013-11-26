@@ -8,9 +8,6 @@ this repository contains the full copyright notices and license terms. -->
             <label name="displayed_on_eshop"/>
             <field name="displayed_on_eshop"/>
     </xpath>
-    <xpath expr="/form/field[@name=&quot;active&quot;]"
-            position="after">
-    </xpath>
     <xpath expr="/form/separator[@name=&quot;description&quot;]"
         position="replace">
     </xpath>
@@ -18,7 +15,7 @@ this repository contains the full copyright notices and license terms. -->
         position="replace">
     </xpath>
     <xpath expr="/form/field[@name=&quot;active&quot;]" position="after">
-        <notebook colspan="6" col="4">
+        <notebook colspan="6">
             <page string="Description" id="desc">
                 <separator name="description" colspan="4"/>
                 <field name="description" colspan="4"/>
