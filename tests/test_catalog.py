@@ -196,6 +196,7 @@ class TestCatalog(NereidTestCase):
         self.NereidWebsite = POOL.get('nereid.website')
         self.Party = POOL.get('party.party')
         self.Locale = POOL.get('nereid.website.locale')
+        self.Category = POOL.get('product.category')
 
         self.templates = {
             'home.jinja':
@@ -381,6 +382,29 @@ class TestCatalog(NereidTestCase):
             with app.test_client() as c:
                 rv = c.get('/product/product-4')
                 self.assertEqual(rv.status_code, 404)
+
+    def test_0090_render_product_by_category(self):
+        """Render product using user friendly paths.
+        """
+        with Transaction().start(DB_NAME, USER, CONTEXT):
+            self.setup_defaults()
+            app = self.get_app()
+
+            with app.test_client() as c:
+                rv = c.get('/product/category/sub-category/product-1')
+                self.assertEqual(rv.status_code, 200)
+
+    def test_0100_test_root_products_ctx_manager(self):
+        """Test root products context manager.
+        """
+        with Transaction().start(DB_NAME, USER, CONTEXT):
+            self.setup_defaults()
+            app = self.get_app()
+
+            with app.test_request_context('/product/product-4'):
+                self.assertEqual(
+                    len(self.Category.get_root_categories()), 2
+                )
 
 
 def suite():
