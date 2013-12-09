@@ -93,10 +93,14 @@ class Product:
         return self.uri
 
     @classmethod
-    def render(cls, uri):
+    def render(cls, uri, path=None):
         """Renders the template for a single product.
 
         :param uri: URI of the product
+        :param path: Ignored parameter. This is used in
+                     cases where SEO friendly URL like
+                     product/category/sub-cat/sub-sub-cat/product-uri
+                     are generated
         """
         categories = request.nereid_website.get_categories() + [None]
         products = cls.search([
@@ -447,7 +451,7 @@ class ProductCategory:
         return Pagination(cls, [
             ('displayed_on_eshop', '=', True),
             ('sites', '=', request.nereid_website.id),
-            ('parent', '=', False),
+            ('parent', '=', None),
         ], page, cls.per_page)
 
     @classmethod
