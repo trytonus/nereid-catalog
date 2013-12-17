@@ -196,6 +196,7 @@ class TestCatalog(NereidTestCase):
         self.NereidWebsite = POOL.get('nereid.website')
         self.Party = POOL.get('party.party')
         self.Locale = POOL.get('nereid.website.locale')
+        self.Category = POOL.get('product.category')
 
         self.templates = {
             'home.jinja':
@@ -216,8 +217,6 @@ class TestCatalog(NereidTestCase):
                 '{% for product in products %}'
                 '|{{ product.name }}|{% endfor %}',
             'product.jinja': '{{ product.sale_price(product.id) }}',
-            'wishlist.jinja':
-                '{% for product in products %}|{{ product.uri }}|{% endfor %}',
         }
 
     def get_template_source(self, name):
@@ -384,31 +383,28 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/product/product-4')
                 self.assertEqual(rv.status_code, 404)
 
-    def test_0090_add_to_wishlist(self):
-        '''Test adding products to wishlist
-        '''
+    def test_0090_render_product_by_category(self):
+        """Render product using user friendly paths.
+        """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
             app = self.get_app()
 
             with app.test_client() as c:
-                c.post('/login', data={
-                    'email': 'email@example.com',
-                    'password': 'password',
-                })
-                c.post(
-                    '/products/add-to-wishlist',
-                    data={'product': 1}
-                )
-                rv = c.get('/products/view-wishlist')
-                self.assertEqual(rv.data, '|product-1|')
+                rv = c.get('/product/category/sub-category/product-1')
+                self.assertEqual(rv.status_code, 200)
 
-                c.post(
-                    '/products/add-to-wishlist',
-                    data={'product': 2}
+    def test_0100_test_root_products_ctx_manager(self):
+        """Test root products context manager.
+        """
+        with Transaction().start(DB_NAME, USER, CONTEXT):
+            self.setup_defaults()
+            app = self.get_app()
+
+            with app.test_request_context('/product/product-4'):
+                self.assertEqual(
+                    len(self.Category.get_root_categories()), 2
                 )
-                rv = c.get('/products/view-wishlist')
-                self.assertEqual(rv.data, '|product-1||product-2|')
 
 
 def suite():

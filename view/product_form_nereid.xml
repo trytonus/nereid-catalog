@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!-- This file is part of Nereid.  The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<data>
+    <xpath expr="/form/label[@name=&quot;active&quot;]"
+            position="before">
+            <newline/>
+            <label name="displayed_on_eshop"/>
+            <field name="displayed_on_eshop"/>
+    </xpath>
+    <xpath expr="/form/separator[@name=&quot;description&quot;]"
+        position="replace">
+    </xpath>
+    <xpath expr="/form/field[@name=&quot;description&quot;]"
+        position="replace">
+    </xpath>
+    <xpath expr="/form/field[@name=&quot;active&quot;]" position="after">
+        <notebook colspan="6">
+            <page string="Description" id="desc">
+                <separator name="description" colspan="4"/>
+                <field name="description" colspan="4"/>
+            </page>
+            <page string="E-Commerce Details"
+                    id="ecomm_det"
+                    states="{'invisible': Not(Bool(Eval('displayed_on_eshop')))}">
+                <label name="uri"/>
+                <field name="uri" colspan="3"/>
+                <notebook colspan="4" >
+                    <page string="Related Products" col="4"
+                        id="related_products" >
+                        <separator colspan="4" string="Up-Sells"
+                            id="sepr_up_sells"/>
+                        <field name="up_sells" colspan="4" />
+                        <newline />
+                        <separator
+                            colspan="4"
+                            string="Cross-Sells"
+                            id="sepr_cross_sells"/>
+                        <field name="cross_sells" colspan="4" />
+                    </page>
+                    <page string="Images" id="images" >
+                        <field name="image_sets"/>
+                    </page>
+                </notebook>
+            </page>
+        </notebook>
+    </xpath>
+</data>

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!-- This file is part of Nereid.  The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<data>
+    <xpath expr="/form/field[@name=&quot;rec_name&quot;]"
+            position="after">
+        <label name="displayed_on_eshop"/>
+        <field name="displayed_on_eshop"/>
+    </xpath>
+    <xpath expr="/form/notebook/page[@id=&quot;childs&quot;]"
+            position="after">
+        <page string="E-Commerce Details" col="4" id="ecomm_det"
+              states="{'invisible': Not(Bool(Eval('displayed_on_eshop')))}">
+            <label name="uri"/>
+            <field name="uri" colspan="2"/>
+            <button name="update_uri" string="Update URI" colspan="1"/>
+            <notebook colspan="4" >
+                <page string="Description" col="1"
+                        id="description" >
+                    <field name="description"/>
+                </page>
+                <page string="Websites" col="1"
+                        id="sites" >
+                    <field name="sites"/>
+                </page>
+                <page string="Image" col="2"
+                        id="image" >
+                    <field name="image_preview" colspan="2" widget="image"/>
+                    <label name="image"/>
+                    <field name="image"/>
+                </page>
+            </notebook>
+        </page>
+    </xpath>
+</data>
