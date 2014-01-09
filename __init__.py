@@ -10,13 +10,14 @@
 from trytond.pool import Pool
 from product import (
     Product, ProductsImageSet, ProductsRelated, ProductCategory,
-    WebSite, WebsiteCategory
+    WebSite, WebsiteCategory, ProductTemplate
 )
 
 
 def register():
     Pool.register(
         Product,
+        ProductTemplate,
         ProductsImageSet,
         ProductsRelated,
         ProductCategory,

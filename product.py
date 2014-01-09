@@ -27,7 +27,7 @@ from trytond.pool import Pool, PoolMeta
 
 __all__ = [
     'Product', 'ProductsImageSet', 'ProductsRelated', 'ProductCategory',
-    'WebSite', 'WebsiteCategory'
+    'WebSite', 'WebsiteCategory', 'ProductTemplate',
 ]
 __metaclass__ = PoolMeta
 
@@ -36,6 +36,29 @@ DEFAULT_STATE2 = {
     'invisible': Not(Bool(Eval('displayed_on_eshop'))),
     'required': Bool(Eval('displayed_on_eshop')),
 }
+
+
+class ProductTemplate:
+    __name__ = "product.template"
+
+    products_displayed_on_eshop = fields.Function(
+        fields.One2Many('product.product', None, 'Products (Disp. on eShop)'),
+        'get_products_displayed_on_eshop'
+    )
+
+    def get_products_displayed_on_eshop(self, name=None):
+        """
+        Return the variants that are displayed on eshop
+        """
+        Product = Pool().get('product.product')
+
+        return map(
+            int,
+            Product.search([
+                ('template', '=', self.id),
+                ('displayed_on_eshop', '=', True),
+            ])
+        )
 
 
 class Product:
@@ -401,7 +424,7 @@ class ProductCategory:
         :param uri: URI of the product category
         :param page: Integer value of the page
         """
-        Product = Pool().get('product.product')
+        ProductTemplate = Pool().get('product.template')
 
         categories = cls.search([
             ('displayed_on_eshop', '=', True),
@@ -414,8 +437,8 @@ class ProductCategory:
         # if only one category is found then it is rendered and
         # if more than one are found then the first one is rendered
         category = categories[0]
-        products = Pagination(Product, [
-            ('displayed_on_eshop', '=', True),
+        products = Pagination(ProductTemplate, [
+            ('products.displayed_on_eshop', '=', True),
             ('category', '=', category.id),
         ], page=page, per_page=cls.per_page)
         return render_template(

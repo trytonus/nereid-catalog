@@ -106,13 +106,13 @@ class TestCatalog(NereidTestCase):
         }])
 
         # Create product categories
-        category, = self._create_product_category(
+        self.category, = self._create_product_category(
             'Category', [{'uri': 'category'}]
         )
-        category2, = self._create_product_category(
+        self.category2, = self._create_product_category(
             'Category 2', [{'uri': 'category2'}]
         )
-        category3, = self._create_product_category(
+        self.category3, = self._create_product_category(
             'Category 3', [{'uri': 'category3'}]
         )
 
@@ -132,15 +132,16 @@ class TestCatalog(NereidTestCase):
             'application_user': USER,
             'default_locale': self.locale_en_us.id,
             'guest_user': guest_user,
-            'categories': [('set', [category.id, category2.id])],
+            'categories': [('set', [self.category.id, self.category2.id])],
             'currencies': [('set', [usd.id])],
         }])
 
+    def create_test_products(self):
         # Create product templates with products
         self._create_product_template(
             'product 1',
             [{
-                'category': category,
+                'category': self.category,
                 'type': 'goods',
                 'list_price': Decimal('10'),
                 'cost_price': Decimal('5'),
@@ -150,7 +151,7 @@ class TestCatalog(NereidTestCase):
         self._create_product_template(
             'product 2',
             [{
-                'category': category2,
+                'category': self.category2,
                 'type': 'goods',
                 'list_price': Decimal('20'),
                 'cost_price': Decimal('5'),
@@ -160,7 +161,7 @@ class TestCatalog(NereidTestCase):
         self._create_product_template(
             'product 3',
             [{
-                'category': category3,
+                'category': self.category3,
                 'type': 'goods',
                 'list_price': Decimal('30'),
                 'cost_price': Decimal('5'),
@@ -170,7 +171,7 @@ class TestCatalog(NereidTestCase):
         self._create_product_template(
             'product 4',
             [{
-                'category': category,
+                'category': self.category,
                 'type': 'goods',
                 'list_price': Decimal('30'),
                 'cost_price': Decimal('5'),
@@ -244,6 +245,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -256,6 +258,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -268,6 +271,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -286,6 +290,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -298,6 +303,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -310,6 +316,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -334,6 +341,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -355,6 +363,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app(
                 CACHE_TYPE='werkzeug.contrib.cache.SimpleCache'
             )
@@ -377,6 +386,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -388,6 +398,7 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_client() as c:
@@ -399,12 +410,51 @@ class TestCatalog(NereidTestCase):
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
+            self.create_test_products()
             app = self.get_app()
 
             with app.test_request_context('/product/product-4'):
                 self.assertEqual(
                     len(self.Category.get_root_categories()), 2
                 )
+
+    def test_0110_products_displayed_on_eshop(self):
+        """
+        Test for the products_displayed_on_eshop function fields
+        """
+        ProductTemplate = POOL.get('product.template')
+        Uom = POOL.get('product.uom')
+
+        with Transaction().start(DB_NAME, USER, CONTEXT):
+            self.setup_defaults()
+
+            unit, = Uom.search([('name', '=', u'Unit')])
+
+            # Create templates with 2 displayed on eshop and 1 not
+            template1, = ProductTemplate.create([{
+                'name': 'Product Template 1',
+                'type': 'goods',
+                'list_price': Decimal('10'),
+                'cost_price': Decimal('5'),
+                'default_uom': unit,
+                'products': [(
+                    'create', [
+                        {
+                            'uri': 'product-1-variant-1',
+                            'displayed_on_eshop': True,
+                        }, {
+                            'uri': 'product-1-variant-2',
+                            'displayed_on_eshop': True,
+                        }, {
+                            'uri': 'product-1-variant-3',
+                            'displayed_on_eshop': False,
+                        },
+                    ]
+                )]
+            }])
+
+            self.assertEqual(len(template1.products_displayed_on_eshop), 2)
+            self.assertEqual(len(template1.products), 3)
 
 
 def suite():
