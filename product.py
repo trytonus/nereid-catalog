@@ -130,6 +130,7 @@ class Product:
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
             ('category', 'in', categories),
+            ('template.active', '=', True),
         ], limit=1)
         if not products:
             return NotFound('Product Not Found')
@@ -237,6 +238,7 @@ class Product:
         products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
             ('category', 'in', categories),
+            ('template.active', '=', True),
         ], page, cls.per_page)
         return render_template('product-list.jinja', products=products)
 
@@ -268,6 +270,7 @@ class Product:
         products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
             ('category', 'in', categories),
+            ('template.active', '=', True),
             ('name', 'ilike', '%' + query + '%'),
         ], page, cls.per_page)
         return render_template('search-results.jinja', products=products)
@@ -280,7 +283,8 @@ class Product:
         categories = request.nereid_website.get_categories() + [None]
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
-            ('category', 'in', categories)
+            ('category', 'in', categories),
+            ('template.active', '=', True),
         ])
         return index.render()
 
@@ -290,7 +294,8 @@ class Product:
         sitemap_section = SitemapSection(
             cls, [
                 ('displayed_on_eshop', '=', True),
-                ('category', 'in', categories)
+                ('category', 'in', categories),
+                ('template.active', '=', True),
             ], page
         )
         sitemap_section.changefreq = 'daily'

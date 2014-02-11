@@ -171,6 +171,64 @@ class TestProduct(NereidTestCase):
                 rv = c.get('/product/product-2')
                 self.assertEqual(rv.data, 'Product-2')
 
+    def test0020_inactive_template(self):
+        '''
+        Assert that the variants of inactive products are not displayed
+        '''
+
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            self.setup_defaults()
+            uom, = self.Uom.search([], limit=1)
+            values1 = {
+                'name': 'Product-1',
+                'category': self.category.id,
+                'type': 'goods',
+                'list_price': Decimal('10'),
+                'cost_price': Decimal('5'),
+                'default_uom': uom.id,
+                'products': [
+                    ('create', [{
+                        'uri': 'product-1',
+                        'displayed_on_eshop': True
+                    }])
+                ]
+
+            }
+            values2 = {
+                'name': 'Product-2',
+                'category': self.category.id,
+                'type': 'goods',
+                'list_price': Decimal('10'),
+                'cost_price': Decimal('5'),
+                'default_uom': uom.id,
+                'products': [
+                    ('create', [{
+                        'uri': 'product-2',
+                        'displayed_on_eshop': True
+                    }])
+                ]
+            }
+            template1, template2 = self.Template.create([values1, values2])
+            app = self.get_app()
+
+            with app.test_client() as c:
+                # Render all products
+                rv = c.get('/products')
+                self.assertEqual(rv.data, '2')
+
+                template1.active = False
+                template1.save()
+
+                rv = c.get('/products')
+                self.assertEqual(rv.data, '1')
+
+                # Render product with uri
+                rv = c.get('/product/product-1')
+                self.assertEqual(rv.status_code, 404)
+
+                rv = c.get('/product/product-2')
+                self.assertEqual(rv.data, 'Product-2')
+
 
 def suite():
     "Test suite"
