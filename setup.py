@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#This file is part of Tryton and Nereid. The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton and Nereid. The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 import re
 import os
 import ConfigParser
@@ -61,9 +61,10 @@ setup(
         'trytond.modules.nereid_catalog.tests': 'tests',
     },
     package_data={
-        'trytond.modules.nereid_catalog': info.get('xml', [])
-                + ['tryton.cfg', 'locale/*.po', 'tests/*.rst', 'view/*.xml']
-                + ['i18n/*.pot', 'i18n/pt_BR/LC_MESSAGES/*'],
+        'trytond.modules.nereid_catalog':
+            info.get('xml', [])
+            + ['tryton.cfg', 'locale/*.po', 'tests/*.rst', 'view/*.xml']
+            + ['i18n/*.pot', 'i18n/pt_BR/LC_MESSAGES/*'],
     },
     license='GPL-3',
     install_requires=requires,
