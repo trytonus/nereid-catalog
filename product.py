@@ -542,6 +542,23 @@ class WebSite:
         'website', 'category', 'Categories Displayed on E-Shop',
         domain=[('displayed_on_eshop', '=', True)]
     )
+    root_navigation_model = fields.Selection(
+        'get_root_navigation_model', 'Root Navigation Model', select=True,
+        help="The model with which the root navigation should be built"
+    )
+    root_category = fields.Many2One(
+        "product.category", 'Root Category', select=True, states={
+            "required": Eval('root_navigation_model') == 'product.category',
+        }
+    )
+
+    @classmethod
+    def get_root_navigation_model(cls):
+        "Downstream modules can override the method and add entries to this"
+        return [
+            (None, ''),
+            ('product.category', 'Product Category'),
+        ]
 
     def get_categories(self):
         """Returns the IDS of the categories
