@@ -549,6 +549,7 @@ class WebSite:
     root_category = fields.Many2One(
         "product.category", 'Root Category', select=True, states={
             "required": Eval('root_navigation_model') == 'product.category',
+            "invisible": Eval('root_navigation_model') != 'product.category',
         }
     )
 
