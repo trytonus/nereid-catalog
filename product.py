@@ -10,7 +10,7 @@
 '''
 from collections import deque
 
-from nereid import render_template, cache
+from nereid import render_template, cache, route
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, url_for
 from nereid import jsonify
@@ -116,6 +116,8 @@ class Product:
         return self.uri
 
     @classmethod
+    @route('/product/<uri>')
+    @route('/product/<path:path>/<uri>')
     def render(cls, uri, path=None):
         """Renders the template for a single product.
 
@@ -139,6 +141,7 @@ class Product:
         return render_template('product.jinja', product=products[0])
 
     @classmethod
+    @route('/products/+recent', methods=['GET', 'POST'])
     def recent_products(cls):
         """
         GET
@@ -218,6 +221,8 @@ class Product:
         return recent_products
 
     @classmethod
+    @route('/products')
+    @route('/products/<int:page>')
     def render_list(cls, page=1):
         """
         Renders the list of all products which are displayed_on_shop=True
@@ -260,6 +265,7 @@ class Product:
         return self.list_price
 
     @classmethod
+    @route('/search')
     def quick_search(cls):
         """A quick and dirty search which searches through the product.product
         for an insensitive like and returns a pagination object the same.
@@ -276,6 +282,7 @@ class Product:
         return render_template('search-results.jinja', products=products)
 
     @classmethod
+    @route('/sitemaps/product-index.xml')
     def sitemap_index(cls):
         """
         Returns a Sitemap Index Page
@@ -289,6 +296,7 @@ class Product:
         return index.render()
 
     @classmethod
+    @route('/sitemaps/product-<int:page>.xml')
     def sitemap(cls, page):
         categories = request.nereid_website.get_categories() + [None]
         sitemap_section = SitemapSection(
@@ -421,6 +429,8 @@ class ProductCategory:
             cls.write([category], {'uri': slugify(category.rec_name)})
 
     @classmethod
+    @route('/category/<uri>')
+    @route('/category/<uri>/<int:page>')
     def render(cls, uri, page=1):
         """
         Renders the template 'category.jinja' with the category and the
@@ -451,6 +461,8 @@ class ProductCategory:
         )
 
     @classmethod
+    @route('/catalog')
+    @route('/catalog/<int:page>')
     def render_list(cls, page=1):
         """
         Renders the list of all categories which are displayed_on_shop=True
@@ -497,6 +509,7 @@ class ProductCategory:
         }
 
     @classmethod
+    @route('/sitemaps/category-index.xml')
     def sitemap_index(cls):
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
@@ -505,6 +518,7 @@ class ProductCategory:
         return index.render()
 
     @classmethod
+    @route('/sitemaps/category-<int:page>.xml')
     def sitemap(cls, page):
         sitemap_section = SitemapSection(
             cls, [
