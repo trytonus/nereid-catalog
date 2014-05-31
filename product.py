@@ -23,6 +23,7 @@ from trytond.model import ModelView, ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
+from trytond import backend
 
 
 __all__ = [
@@ -343,15 +344,54 @@ class ProductsImageSet(ModelSQL, ModelView):
     product = fields.Many2One(
         'product.product', 'Product',
         ondelete='CASCADE', select=True)
-    thumbnail_image = fields.Many2One(
-        'nereid.static.file', 'Thumbnail Image',
-        ondelete='CASCADE', select=True)
-    medium_image = fields.Many2One(
-        'nereid.static.file', 'Medium Image',
-        ondelete='CASCADE', select=True)
-    large_image = fields.Many2One(
-        'nereid.static.file', 'Large Image',
-        ondelete='CASCADE', select=True)
+    image = fields.Many2One(
+        'nereid.static.file', 'Image',
+        ondelete='CASCADE', select=True, required=True
+    )
+    image_preview = fields.Function(
+        fields.Binary('Image Preview'), 'get_image_preview'
+    )
+
+    @property
+    def large(self):
+        """
+        Return large image
+        """
+        return self.resize(1024, 1024)
+
+    @property
+    def medium(self):
+        """
+        Return medium image
+        """
+        return self.resize(500, 500)
+
+    @property
+    def thumbnail(self):
+        """
+        Return thumbnail image
+        """
+        return self.resize(100, 100)
+
+    def resize(self, width, height):
+        """
+        Return image with user specified dimensions
+        """
+        return self.image.transform_command().resize(width, height)
+
+    def get_image_preview(self, name=None):
+        return self.image.file_binary if self.image else None
+
+    @classmethod
+    def __register__(cls, module_name):
+        TableHandler = backend.get('TableHandler')
+        cursor = Transaction().cursor
+
+        table = TableHandler(cursor, cls, module_name)
+        if not table.column_exist('image'):
+            table.column_rename('large_image', 'image')
+
+        super(ProductsImageSet, cls).__register__(module_name)
 
 
 class ProductsRelated(ModelSQL):
