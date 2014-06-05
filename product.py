@@ -95,6 +95,14 @@ class Product:
         'product.product-product.product',
         'product', 'cross_sell', 'Cross-Sells', states=DEFAULT_STATE
     )
+    default_image = fields.Function(
+        fields.Many2One('nereid.static.file', 'Image'), 'get_default_image',
+    )
+
+    def get_default_image(self, name):
+        """Returns default product image if any.
+        """
+        return self.image_sets[0].image.id if self.image_sets else None
 
     @classmethod
     def __setup__(cls):
