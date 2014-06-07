@@ -9,14 +9,16 @@
 import json
 import unittest
 from decimal import Decimal
-
 from lxml import objectify
-
+from nereid import render_template
 import trytond.tests.test_tryton
 from trytond.tests.test_tryton import POOL, USER, DB_NAME, CONTEXT, \
     test_view, test_depends
 from nereid.testing import NereidTestCase
 from trytond.transaction import Transaction
+from trytond.config import CONFIG
+
+CONFIG.options['data_path'] = '/tmp'
 
 
 class TestCatalog(NereidTestCase):
@@ -201,7 +203,12 @@ class TestCatalog(NereidTestCase):
 
         self.templates = {
             'home.jinja':
-                '{{request.nereid_website.get_currencies()}}',
+                '''
+                {{request.nereid_website.get_currencies()}}
+                {{ product.image_sets[0].thumbnail }}
+                {{ product.image_sets[0].large }}
+                {{ product.image_sets[0].medium }}
+                ''',
             'login.jinja':
                 '{{ login_form.errors }} {{get_flashed_messages()}}',
             'product-list.jinja':
@@ -455,6 +462,52 @@ class TestCatalog(NereidTestCase):
 
             self.assertEqual(len(template1.products_displayed_on_eshop), 2)
             self.assertEqual(len(template1.products), 3)
+
+    def test_0120_product_image_set(self):
+        """
+        Test for adding product image set
+        """
+        ProductImageSet = POOL.get('product.product.imageset')
+        Product = POOL.get('product.product')
+        StaticFolder = POOL.get("nereid.static.folder")
+        StaticFile = POOL.get("nereid.static.file")
+
+        with Transaction().start(DB_NAME, USER, CONTEXT):
+            self.setup_defaults()
+            self.create_test_products()
+
+            folder, = StaticFolder.create([{
+                'folder_name': 'Test'
+            }])
+            file_buffer = buffer('test-content')
+            file = StaticFile.create([{
+                'name': 'test.png',
+                'folder': folder.id,
+                'file_binary': file_buffer
+            }])[0]
+
+            product = Product.search([])[0]
+
+            image, = ProductImageSet.create([{
+                'name': 'test_image',
+                'product': product,
+                'image': file
+            }])
+            app = self.get_app()
+            with app.test_request_context('/'):
+                home_template = render_template('home.jinja', product=product)
+                self.assertTrue(
+                    '/static-file-transform/1/resize%2Cw_100%2Ch_100%2Cm_n.png'
+                    in home_template
+                )
+                self.assertTrue(
+                    '/static-file-transform/1/resize%2Cw_500%2Ch_500%2Cm_n.png'
+                    in home_template
+                )
+                self.assertTrue(
+                    '/static-file-transform/1/resize%2Cw_1024%2Ch_1024%2Cm_n'
+                    '.png' in home_template
+                )
 
 
 def suite():
