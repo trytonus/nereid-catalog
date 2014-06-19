@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#This file is part of Tryton and Nereid. The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton and Nereid. The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 import re
 import os
 import ConfigParser
@@ -20,7 +20,9 @@ major_version, minor_version, _ = info.get('version', '0.0.1').split('.', 2)
 major_version = int(major_version)
 minor_version = int(minor_version)
 
-requires = []
+requires = [
+    'trytond_nereid>=3.0.7.0,<3.1',
+]
 for dep in info.get('depends', []):
     if not re.match(r'(ir|res|webdav)(\W|$)', dep):
         requires.append(
@@ -61,9 +63,10 @@ setup(
         'trytond.modules.nereid_catalog.tests': 'tests',
     },
     package_data={
-        'trytond.modules.nereid_catalog': info.get('xml', [])
-                + ['tryton.cfg', 'locale/*.po', 'tests/*.rst', 'view/*.xml']
-                + ['i18n/*.pot', 'i18n/pt_BR/LC_MESSAGES/*'],
+        'trytond.modules.nereid_catalog':
+            info.get('xml', [])
+            + ['tryton.cfg', 'locale/*.po', 'tests/*.rst', 'view/*.xml']
+            + ['i18n/*.pot', 'i18n/pt_BR/LC_MESSAGES/*'],
     },
     license='GPL-3',
     install_requires=requires,

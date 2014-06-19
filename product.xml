@@ -61,5 +61,11 @@
             <field name="method">product.category.context_processor</field>
         </record>
 
+        <record model="ir.ui.view" id="product_image">
+            <field name="model">product.product.imageset</field>
+            <field name="type">form</field>
+            <field name="name">product_image</field>
+        </record>
+
     </data>
 </tryton>

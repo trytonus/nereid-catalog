@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<form string="Product Image" col="6">
+    <label name="name"/>
+    <field name="name"/>
+    <label name="image"/>
+    <field name="image"/>
+    <field name="image_preview" widget="image" height="150"/>
+</form>

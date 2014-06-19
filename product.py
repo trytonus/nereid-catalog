@@ -10,7 +10,7 @@
 '''
 from collections import deque
 
-from nereid import render_template, cache
+from nereid import render_template, cache, route
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, url_for
 from nereid import jsonify
@@ -23,6 +23,7 @@ from trytond.model import ModelView, ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
+from trytond import backend
 
 
 __all__ = [
@@ -94,6 +95,14 @@ class Product:
         'product.product-product.product',
         'product', 'cross_sell', 'Cross-Sells', states=DEFAULT_STATE
     )
+    default_image = fields.Function(
+        fields.Many2One('nereid.static.file', 'Image'), 'get_default_image',
+    )
+
+    def get_default_image(self, name):
+        """Returns default product image if any.
+        """
+        return self.image_sets[0].image.id if self.image_sets else None
 
     @classmethod
     def __setup__(cls):
@@ -116,6 +125,8 @@ class Product:
         return self.uri
 
     @classmethod
+    @route('/product/<uri>')
+    @route('/product/<path:path>/<uri>')
     def render(cls, uri, path=None):
         """Renders the template for a single product.
 
@@ -139,6 +150,7 @@ class Product:
         return render_template('product.jinja', product=products[0])
 
     @classmethod
+    @route('/products/+recent', methods=['GET', 'POST'])
     def recent_products(cls):
         """
         GET
@@ -218,6 +230,8 @@ class Product:
         return recent_products
 
     @classmethod
+    @route('/products')
+    @route('/products/<int:page>')
     def render_list(cls, page=1):
         """
         Renders the list of all products which are displayed_on_shop=True
@@ -260,6 +274,7 @@ class Product:
         return self.list_price
 
     @classmethod
+    @route('/search')
     def quick_search(cls):
         """A quick and dirty search which searches through the product.product
         for an insensitive like and returns a pagination object the same.
@@ -276,6 +291,7 @@ class Product:
         return render_template('search-results.jinja', products=products)
 
     @classmethod
+    @route('/sitemaps/product-index.xml')
     def sitemap_index(cls):
         """
         Returns a Sitemap Index Page
@@ -289,6 +305,7 @@ class Product:
         return index.render()
 
     @classmethod
+    @route('/sitemaps/product-<int:page>.xml')
     def sitemap(cls, page):
         categories = request.nereid_website.get_categories() + [None]
         sitemap_section = SitemapSection(
@@ -335,15 +352,54 @@ class ProductsImageSet(ModelSQL, ModelView):
     product = fields.Many2One(
         'product.product', 'Product',
         ondelete='CASCADE', select=True)
-    thumbnail_image = fields.Many2One(
-        'nereid.static.file', 'Thumbnail Image',
-        ondelete='CASCADE', select=True)
-    medium_image = fields.Many2One(
-        'nereid.static.file', 'Medium Image',
-        ondelete='CASCADE', select=True)
-    large_image = fields.Many2One(
-        'nereid.static.file', 'Large Image',
-        ondelete='CASCADE', select=True)
+    image = fields.Many2One(
+        'nereid.static.file', 'Image',
+        ondelete='CASCADE', select=True, required=True
+    )
+    image_preview = fields.Function(
+        fields.Binary('Image Preview'), 'get_image_preview'
+    )
+
+    @property
+    def large(self):
+        """
+        Return large image
+        """
+        return self.resize(1024, 1024)
+
+    @property
+    def medium(self):
+        """
+        Return medium image
+        """
+        return self.resize(500, 500)
+
+    @property
+    def thumbnail(self):
+        """
+        Return thumbnail image
+        """
+        return self.resize(100, 100)
+
+    def resize(self, width, height):
+        """
+        Return image with user specified dimensions
+        """
+        return self.image.transform_command().resize(width, height)
+
+    def get_image_preview(self, name=None):
+        return self.image.file_binary if self.image else None
+
+    @classmethod
+    def __register__(cls, module_name):
+        TableHandler = backend.get('TableHandler')
+        cursor = Transaction().cursor
+
+        table = TableHandler(cursor, cls, module_name)
+        if not table.column_exist('image'):
+            table.column_rename('large_image', 'image')
+
+        super(ProductsImageSet, cls).__register__(module_name)
 
 
 class ProductsRelated(ModelSQL):
@@ -421,6 +477,8 @@ class ProductCategory:
             cls.write([category], {'uri': slugify(category.rec_name)})
 
     @classmethod
+    @route('/category/<uri>')
+    @route('/category/<uri>/<int:page>')
     def render(cls, uri, page=1):
         """
         Renders the template 'category.jinja' with the category and the
@@ -451,6 +509,8 @@ class ProductCategory:
         )
 
     @classmethod
+    @route('/catalog')
+    @route('/catalog/<int:page>')
     def render_list(cls, page=1):
         """
         Renders the list of all categories which are displayed_on_shop=True
@@ -497,6 +557,7 @@ class ProductCategory:
         }
 
     @classmethod
+    @route('/sitemaps/category-index.xml')
     def sitemap_index(cls):
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
@@ -505,6 +566,7 @@ class ProductCategory:
         return index.render()
 
     @classmethod
+    @route('/sitemaps/category-<int:page>.xml')
     def sitemap(cls, page):
         sitemap_section = SitemapSection(
             cls, [
@@ -542,6 +604,24 @@ class WebSite:
         'website', 'category', 'Categories Displayed on E-Shop',
         domain=[('displayed_on_eshop', '=', True)]
     )
+    root_navigation_model = fields.Selection(
+        'get_root_navigation_model', 'Root Navigation Model', select=True,
+        help="The model with which the root navigation should be built"
+    )
+    root_category = fields.Many2One(
+        "product.category", 'Root Category', select=True, states={
+            "required": Eval('root_navigation_model') == 'product.category',
+            "invisible": Eval('root_navigation_model') != 'product.category',
+        }
+    )
+
+    @classmethod
+    def get_root_navigation_model(cls):
+        "Downstream modules can override the method and add entries to this"
+        return [
+            (None, ''),
+            ('product.category', 'Product Category'),
+        ]
 
     def get_categories(self):
         """Returns the IDS of the categories
