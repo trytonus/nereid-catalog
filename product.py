@@ -46,6 +46,7 @@ class ProductTemplate:
         fields.One2Many('product.product', None, 'Products (Disp. on eShop)'),
         'get_products_displayed_on_eshop'
     )
+    description = fields.Text("Description")
 
     def get_products_displayed_on_eshop(self, name=None):
         """
@@ -98,6 +99,7 @@ class Product:
     default_image = fields.Function(
         fields.Many2One('nereid.static.file', 'Image'), 'get_default_image',
     )
+    use_template_description = fields.Boolean("Use template's description")
 
     def get_default_image(self, name):
         """Returns default product image if any.
@@ -110,6 +112,9 @@ class Product:
         cls._sql_constraints += [
             ('uri_uniq', 'UNIQUE(uri)', 'URI must be unique'),
         ]
+        cls.description.states['invisible'] = Bool(
+            Eval('use_template_description')
+        )
         cls.per_page = 9
 
     @staticmethod
@@ -123,6 +128,10 @@ class Product:
         if not self.uri:
             return slugify(self.template.name)
         return self.uri
+
+    @staticmethod
+    def default_use_template_description():
+        return True
 
     @classmethod
     @route('/product/<uri>')
