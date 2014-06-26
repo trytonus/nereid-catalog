@@ -7,6 +7,8 @@ this repository contains the full copyright notices and license terms. -->
             <newline/>
             <label name="displayed_on_eshop"/>
             <field name="displayed_on_eshop"/>
+            <label name="use_template_description"/>
+            <field name="use_template_description"/>
     </xpath>
     <xpath expr="/form/separator[@name=&quot;description&quot;]"
         position="replace">
@@ -16,7 +18,8 @@ this repository contains the full copyright notices and license terms. -->
     </xpath>
     <xpath expr="/form/field[@name=&quot;active&quot;]" position="after">
         <notebook colspan="6">
-            <page string="Description" id="desc">
+            <page string="Description" id="desc"
+                    states="{'invisible': Bool(Eval('use_template_description'))}">
                 <separator name="description" colspan="4"/>
                 <field name="description" colspan="4"/>
             </page>
