@@ -6,6 +6,8 @@ this repository contains the full copyright notices and license terms. -->
             position="after">
         <label name="displayed_on_eshop"/>
         <field name="displayed_on_eshop"/>
+        <label name="sequence"/>
+        <field name="sequence"/>
     </xpath>
     <xpath expr="/form/notebook/page[@id=&quot;childs&quot;]"
             position="after">

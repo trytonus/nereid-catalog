@@ -509,6 +509,39 @@ class TestCatalog(NereidTestCase):
                     '.png' in home_template
                 )
 
+    def test_0130_product_category_sequence(self):
+        """
+        Test if product categories are ordered according to sequence
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            # Create product categories with some sequence
+            category_a, = self.Category.create([{
+                'name': 'Category-A',
+                'sequence': 4,
+                'uri': 'category-a',
+            }])
+            category_b, = self.Category.create([{
+                'name': 'Category-B',
+                'sequence': 1,
+                'uri': 'category-b',
+            }])
+            category_c, = self.Category.create([{
+                'name': 'Category-C',
+                'sequence': 3,
+                'uri': 'category-c',
+            }])
+            category_d, = self.Category.create([{
+                'name': 'Category-D',
+                'sequence': 2,
+                'uri': 'category-d',
+            }])
+
+            # Test the sequence of categories
+            self.assertEqual(
+                self.Category.search([]),
+                [category_b, category_d, category_c, category_a]
+            )
+
 
 def suite():
     "Catalog test suite"

@@ -489,10 +489,12 @@ class ProductCategory:
         'nereid.website-product.category',
         'category', 'website', 'Sites', states=DEFAULT_STATE
     )
+    sequence = fields.Integer('Sequence')
 
     @classmethod
     def __setup__(cls):
         super(ProductCategory, cls).__setup__()
+        cls._order.insert(0, ('sequence', 'ASC'))
         cls._sql_constraints += [
             ('uri_uniq', 'UNIQUE(uri)', 'URI must be unique'),
         ]
@@ -641,6 +643,10 @@ class ProductCategory:
             'id': self.id,
             'rec_name': self.rec_name,
         }
+
+    @staticmethod
+    def default_sequence():
+        return 10
 
 
 class WebSite:
