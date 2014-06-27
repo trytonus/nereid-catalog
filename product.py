@@ -47,6 +47,9 @@ class ProductTemplate:
         'get_products_displayed_on_eshop'
     )
     description = fields.Text("Description")
+    images = fields.One2Many(
+        'product.product.imageset', 'template', 'Images',
+    )
 
     def get_products_displayed_on_eshop(self, name=None):
         """
@@ -360,6 +363,9 @@ class ProductsImageSet(ModelSQL, ModelView):
     name = fields.Char("Name", required=True)
     product = fields.Many2One(
         'product.product', 'Product',
+        ondelete='CASCADE', select=True)
+    template = fields.Many2One(
+        'product.template', 'Template',
         ondelete='CASCADE', select=True)
     image = fields.Many2One(
         'nereid.static.file', 'Image',
