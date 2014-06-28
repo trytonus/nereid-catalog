@@ -6,5 +6,8 @@ this repository contains the full copyright notices and license terms. -->
         <page string="Description" id="template-description">
             <field name="description"/>
         </page>
+        <page string="Images" id="template-image-set">
+            <field name="images"/>
+        </page>
     </xpath>
 </data>
