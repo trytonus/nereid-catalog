@@ -229,6 +229,50 @@ class TestProduct(NereidTestCase):
                 rv = c.get('/product/product-2')
                 self.assertEqual(rv.data, 'Product-2')
 
+    def test0030_get_variant_description(self):
+        """
+        Test to get variant description.
+        If use_template_description is false, show description
+        of variant else show description of product template
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            self.setup_defaults()
+            uom, = self.Uom.search([], limit=1)
+
+            # creating product template
+            product_template, = self.Template.create([{
+                'name': 'test template',
+                'category': self.category.id,
+                'type': 'goods',
+                'list_price': Decimal('10'),
+                'cost_price': Decimal('5'),
+                'default_uom': uom.id,
+                'description': 'Description of template',
+            }])
+
+            # setting use_template_description to false
+            # and adding variant description
+            product_variant, = product_template.products
+            self.Product.write([product_variant], {
+                'use_template_description': False,
+                'description': 'Description of product',
+            })
+
+            self.assertEqual(
+                product_variant.get_description(),
+                'Description of product'
+            )
+            # setting use_template_description to true
+            # description of variant should come from product template
+            self.Product.write([product_variant], {
+                'use_template_description': True,
+            })
+
+            self.assertEqual(
+                product_variant.get_description(),
+                'Description of template'
+            )
+
 
 def suite():
     "Test suite"

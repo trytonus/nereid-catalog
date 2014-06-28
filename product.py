@@ -13,7 +13,7 @@ from collections import deque
 from nereid import render_template, cache, route
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, url_for
-from nereid import jsonify
+from nereid import jsonify, Markup
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
@@ -24,7 +24,6 @@ from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond import backend
-
 
 __all__ = [
     'Product', 'ProductsImageSet', 'ProductsRelated', 'ProductCategory',
@@ -351,6 +350,22 @@ class Product:
         if self.category:
             response['category'] = self.category._json()
         return response
+
+    def get_description(self):
+        """
+        Get description of product.
+
+        If the product is set to use the template's description, then
+        the template description is sent back.
+
+        The returned value is a `~jinja2.Markup` object which makes it
+        HTML safe and can be used directly in templates. It is recommended
+        to use this method instead of trying to wrap this logic in the
+        templates.
+        """
+        if self.use_template_description:
+            return Markup(self.template.description)
+        return Markup(self.description)
 
 
 class ProductsImageSet(ModelSQL, ModelView):
