@@ -46,7 +46,7 @@ class ProductTemplate:
         'get_products_displayed_on_eshop'
     )
     description = fields.Text("Description")
-    images = fields.One2Many(
+    image_sets = fields.One2Many(
         'product.product.imageset', 'template', 'Images',
     )
 
@@ -387,7 +387,7 @@ class Product:
         the template images is sent back.
         """
         if self.use_template_images:
-            return map(lambda x: x.image, self.template.images)
+            return map(lambda x: x.image, self.template.image_sets)
         return map(lambda x: x.image, self.image_sets)
 
 
