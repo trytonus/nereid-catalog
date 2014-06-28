@@ -13,7 +13,7 @@ from collections import deque
 from nereid import render_template, cache, route
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, url_for
-from nereid import jsonify
+from nereid import jsonify, Markup
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
@@ -24,7 +24,6 @@ from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond import backend
-
 
 __all__ = [
     'Product', 'ProductsImageSet', 'ProductsRelated', 'ProductCategory',
@@ -45,6 +44,10 @@ class ProductTemplate:
     products_displayed_on_eshop = fields.Function(
         fields.One2Many('product.product', None, 'Products (Disp. on eShop)'),
         'get_products_displayed_on_eshop'
+    )
+    description = fields.Text("Description")
+    image_sets = fields.One2Many(
+        'product.product.imageset', 'template', 'Images',
     )
 
     def get_products_displayed_on_eshop(self, name=None):
@@ -85,7 +88,9 @@ class Product:
 
     image_sets = fields.One2Many(
         'product.product.imageset', 'product',
-        'Image Sets', states=DEFAULT_STATE
+        'Image Sets', states={
+            'invisible': Bool(Eval('use_template_images')),
+        }
     )
     up_sells = fields.Many2Many(
         'product.product-product.product',
@@ -98,11 +103,15 @@ class Product:
     default_image = fields.Function(
         fields.Many2One('nereid.static.file', 'Image'), 'get_default_image',
     )
+    use_template_description = fields.Boolean("Use template's description")
+    use_template_images = fields.Boolean("Use template's images")
 
     def get_default_image(self, name):
-        """Returns default product image if any.
         """
-        return self.image_sets[0].image.id if self.image_sets else None
+        Returns default product image if any.
+        """
+        images = self.get_images()
+        return images[0].id if images else None
 
     @classmethod
     def __setup__(cls):
@@ -110,6 +119,9 @@ class Product:
         cls._sql_constraints += [
             ('uri_uniq', 'UNIQUE(uri)', 'URI must be unique'),
         ]
+        cls.description.states['invisible'] = Bool(
+            Eval('use_template_description')
+        )
         cls.per_page = 9
 
     @staticmethod
@@ -123,6 +135,14 @@ class Product:
         if not self.uri:
             return slugify(self.template.name)
         return self.uri
+
+    @staticmethod
+    def default_use_template_description():
+        return True
+
+    @staticmethod
+    def default_use_template_images():
+        return True
 
     @classmethod
     @route('/product/<uri>')
@@ -343,6 +363,33 @@ class Product:
             response['category'] = self.category._json()
         return response
 
+    def get_description(self):
+        """
+        Get description of product.
+
+        If the product is set to use the template's description, then
+        the template description is sent back.
+
+        The returned value is a `~jinja2.Markup` object which makes it
+        HTML safe and can be used directly in templates. It is recommended
+        to use this method instead of trying to wrap this logic in the
+        templates.
+        """
+        if self.use_template_description:
+            return Markup(self.template.description)
+        return Markup(self.description)
+
+    def get_images(self):
+        """
+        Get images of product variant.
+
+        If the product is set to use the template's images, then
+        the template images is sent back.
+        """
+        if self.use_template_images:
+            return map(lambda x: x.image, self.template.image_sets)
+        return map(lambda x: x.image, self.image_sets)
+
 
 class ProductsImageSet(ModelSQL, ModelView):
     "Images for Product"
@@ -351,6 +398,9 @@ class ProductsImageSet(ModelSQL, ModelView):
     name = fields.Char("Name", required=True)
     product = fields.Many2One(
         'product.product', 'Product',
+        ondelete='CASCADE', select=True)
+    template = fields.Many2One(
+        'product.template', 'Template',
         ondelete='CASCADE', select=True)
     image = fields.Many2One(
         'nereid.static.file', 'Image',
