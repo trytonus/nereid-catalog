@@ -134,8 +134,8 @@ class TestCatalog(NereidTestCase):
             'application_user': USER,
             'default_locale': self.locale_en_us.id,
             'guest_user': guest_user,
-            'categories': [('set', [self.category.id, self.category2.id])],
-            'currencies': [('set', [usd.id])],
+            'categories': [('add', [self.category.id, self.category2.id])],
+            'currencies': [('add', [usd.id])],
         }])
 
     def create_test_products(self):

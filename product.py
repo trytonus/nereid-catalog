@@ -4,7 +4,7 @@
 
     Products catalogue display
 
-    :copyright: (c) 2010-2013 by Openlabs Technologies & Consulting (P) Ltd.
+    :copyright: (c) 2010-2014 by Openlabs Technologies & Consulting (P) Ltd.
     :license: GPLv3, see LICENSE for more details
 
 '''
@@ -13,7 +13,7 @@ from collections import deque
 from nereid import render_template, cache, route
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, key_from_list, url_for
-from nereid import jsonify, Markup
+from nereid import jsonify, Markup, context_processor
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
@@ -81,8 +81,7 @@ class Product:
     json_allowed_fields = set(['rec_name', 'sale_price', 'id', 'uri'])
 
     uri = fields.Char(
-        'URI', select=True, on_change_with=['template', 'uri'],
-        states=DEFAULT_STATE2
+        'URI', select=True, states=DEFAULT_STATE2
     )
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
 
@@ -128,6 +127,7 @@ class Product:
     def default_displayed_on_eshop():
         return False
 
+    @fields.depends('template', 'uri')
     def on_change_with_uri(self):
         """
         If the URI is empty, slugify template name into URI
@@ -473,8 +473,7 @@ class ProductCategory:
     __name__ = "product.category"
 
     uri = fields.Char(
-        'URI', select=True,
-        on_change_with=['name', 'uri', 'parent'], states=DEFAULT_STATE2
+        'URI', select=True, states=DEFAULT_STATE2
     )
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?')
     description = fields.Text('Description')
@@ -509,6 +508,7 @@ class ProductCategory:
             return self.image.file_binary
         return None
 
+    @fields.depends('name', 'uri', 'parent')
     def on_change_with_uri(self):
         """Slugifies the full name of a category to
         make the uri on change of product name.
@@ -577,6 +577,7 @@ class ProductCategory:
         return render_template('category-list.jinja', categories=categories)
 
     @classmethod
+    @context_processor('all_categories')
     def get_categories(cls, page=1):
         """Return list of categories
         """
@@ -586,6 +587,7 @@ class ProductCategory:
         ], page, cls.per_page)
 
     @classmethod
+    @context_processor('root_categories')
     def get_root_categories(cls, page=1):
         """Return list of Root Categories."""
         return Pagination(cls, [
@@ -593,20 +595,6 @@ class ProductCategory:
             ('sites', '=', request.nereid_website.id),
             ('parent', '=', None),
         ], page, cls.per_page)
-
-    @classmethod
-    def context_processor(cls):
-        """This function will be called by nereid to update
-        the template context. Must return a dictionary that the context
-        will be updated with.
-
-        This function is registered with nereid.template.context_processor
-        in xml code
-        """
-        return {
-            'all_categories': cls.get_categories,
-            'root_categories': cls.get_root_categories,
-        }
 
     @classmethod
     @route('/sitemaps/category-index.xml')
