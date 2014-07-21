@@ -4,7 +4,7 @@
 
     Test Product
 
-    :copyright: (c) 2013 by Openlabs Technologies & Consulting (P) Limited
+    :copyright: (c) 2013-2014 by Openlabs Technologies & Consulting (P) Limited
     :license: BSD, see LICENSE for more details.
 """
 import unittest
@@ -79,8 +79,8 @@ class TestProduct(NereidTestCase):
             'application_user': USER,
             'default_locale': self.locale_en_us.id,
             'guest_user': guest_user,
-            'categories': [('set', [self.category.id])],
-            'currencies': [('set', [usd.id])],
+            'categories': [('add', [self.category.id])],
+            'currencies': [('add', [usd.id])],
         }])
 
     def setUp(self):
@@ -248,6 +248,7 @@ class TestProduct(NereidTestCase):
                 'cost_price': Decimal('5'),
                 'default_uom': uom.id,
                 'description': 'Description of template',
+                'products': [('create', self.Template.default_products())],
             }])
 
             # setting use_template_description to false
@@ -315,6 +316,7 @@ class TestProduct(NereidTestCase):
                 'cost_price': Decimal('5'),
                 'default_uom': uom.id,
                 'description': 'Description of template',
+                'products': [('create', self.Template.default_products())]
             }])
 
             image1, = ProductImageSet.create([{
@@ -381,6 +383,7 @@ class TestProduct(NereidTestCase):
                 'cost_price': Decimal('5'),
                 'default_uom': uom.id,
                 'description': 'Description of template',
+                'products': [('create', self.Template.default_products())]
             }])
 
             product, = product_template.products
