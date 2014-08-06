@@ -45,7 +45,9 @@ this repository contains the full copyright notices and license terms. -->
                     </page>
                     <page string="Images" id="images"
                         states="{'invisible': Bool(Eval('use_template_images'))}">
-                        <field name="image_sets"/>
+                        <label name="default_image_set"/>
+                        <field name="default_image_set"/>
+                        <field name="image_sets" colspan="4"/>
                     </page>
                 </notebook>
             </page>

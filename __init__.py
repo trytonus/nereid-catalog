@@ -16,9 +16,9 @@ from product import (
 
 def register():
     Pool.register(
+        ProductsImageSet,
         Product,
         ProductTemplate,
-        ProductsImageSet,
         ProductsRelated,
         ProductCategory,
         WebSite,

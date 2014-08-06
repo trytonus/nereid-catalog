@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<tree string="Image Sets">
+    <field name="name"/>
+    <button name="set_default" string="Set Default" confirm="Image has been successfully set as default. Please reload to see changes."/>
+</tree>

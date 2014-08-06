@@ -12,7 +12,9 @@ this repository contains the full copyright notices and license terms. -->
             <field name="description"/>
         </page>
         <page string="Image Sets" id="template-image-set">
-            <field name="image_sets"/>
+            <label name="default_image_set"/>
+            <field name="default_image_set"/>
+            <field name="image_sets" colspan="4"/>
         </page>
     </xpath>
 </data>
