@@ -134,7 +134,6 @@ class TestCatalog(NereidTestCase):
             'application_user': USER,
             'default_locale': self.locale_en_us.id,
             'guest_user': guest_user,
-            'categories': [('add', [self.category.id, self.category2.id])],
             'currencies': [('add', [usd.id])],
         }])
 
@@ -270,7 +269,7 @@ class TestCatalog(NereidTestCase):
 
             with app.test_client() as c:
                 rv = c.get('/products')
-                self.assertEqual(rv.data, '|product 1||product 2|')
+                self.assertEqual(rv.data, '|product 1||product 2||product 3|')
 
     def test_0030_category(self):
         """
@@ -288,9 +287,6 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/category/category2')
                 self.assertEqual(rv.data, '|product 2|')
 
-                rv = c.get('/category/category3')
-                self.assertEqual(rv.status_code, 404)
-
     def test_0035_category_list(self):
         """
         Test the category list pages
@@ -302,7 +298,7 @@ class TestCatalog(NereidTestCase):
 
             with app.test_client() as c:
                 rv = c.get('/catalog')
-                self.assertEqual(rv.data, '|Category||Category 2|')
+                self.assertEqual(rv.data, '|Category||Category 2||Category 3|')
 
     def test_0040_quick_search(self):
         """
@@ -315,7 +311,7 @@ class TestCatalog(NereidTestCase):
 
             with app.test_client() as c:
                 rv = c.get('/search?q=product')
-                self.assertEqual(rv.data, '|product 1||product 2|')
+                self.assertEqual(rv.data, '|product 1||product 2||product 3|')
 
     def test_0050_product_sitemap_index(self):
         """
@@ -340,7 +336,7 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/sitemaps/product-1.xml')
                 xml = objectify.fromstring(rv.data)
                 self.assertTrue(xml.tag.endswith('urlset'))
-                self.assertEqual(len(xml.getchildren()), 2)
+                self.assertEqual(len(xml.getchildren()), 3)
 
     def test_0060_category_sitemap_index(self):
         """
@@ -362,7 +358,7 @@ class TestCatalog(NereidTestCase):
                 )
                 xml = objectify.fromstring(rv.data)
                 self.assertTrue(xml.tag.endswith('urlset'))
-                self.assertEqual(len(xml.getchildren()), 2)
+                self.assertEqual(len(xml.getchildren()), 3)
 
     def test_0070_get_recent_products(self):
         """
@@ -412,20 +408,7 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/product/category/sub-category/product-1')
                 self.assertEqual(rv.status_code, 200)
 
-    def test_0100_test_root_products_ctx_manager(self):
-        """Test root products context manager.
-        """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
-
-            with app.test_request_context('/product/product-4'):
-                self.assertEqual(
-                    len(self.Category.get_root_categories()), 2
-                )
-
-    def test_0110_products_displayed_on_eshop(self):
+    def test_0100_products_displayed_on_eshop(self):
         """
         Test for the products_displayed_on_eshop function fields
         """
@@ -463,7 +446,7 @@ class TestCatalog(NereidTestCase):
             self.assertEqual(len(template1.products_displayed_on_eshop), 2)
             self.assertEqual(len(template1.products), 3)
 
-    def test_0120_product_image_set(self):
+    def test_0110_product_image_set(self):
         """
         Test for adding product image set
         """
@@ -508,39 +491,6 @@ class TestCatalog(NereidTestCase):
                     '/static-file-transform/1/resize%2Cw_1024%2Ch_1024%2Cm_n'
                     '.png' in home_template
                 )
-
-    def test_0130_product_category_sequence(self):
-        """
-        Test if product categories are ordered according to sequence
-        """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            # Create product categories with some sequence
-            category_a, = self.Category.create([{
-                'name': 'Category-A',
-                'sequence': 4,
-                'uri': 'category-a',
-            }])
-            category_b, = self.Category.create([{
-                'name': 'Category-B',
-                'sequence': 1,
-                'uri': 'category-b',
-            }])
-            category_c, = self.Category.create([{
-                'name': 'Category-C',
-                'sequence': 3,
-                'uri': 'category-c',
-            }])
-            category_d, = self.Category.create([{
-                'name': 'Category-D',
-                'sequence': 2,
-                'uri': 'category-d',
-            }])
-
-            # Test the sequence of categories
-            self.assertEqual(
-                self.Category.search([]),
-                [category_b, category_d, category_c, category_a]
-            )
 
 
 def suite():

@@ -1,0 +1,13 @@
+Version 3.2.1.0
+===============
+
+* Major Change: Removed product category from being a cataloging system.
+
+  Product category was being used as one of the means to generate a menu
+  and catalog hierarchy. Category in Tryton is more of an accounting and
+  inventory management system (than a catalog organisation item). Hence
+  Product Category functionality that was extended to make it function in
+  the web store is removed.
+
+  Alternative: Use nereid-catalog-tree which offers a node object which
+  allows products to be classified under multiple nodes.

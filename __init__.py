@@ -10,7 +10,7 @@
 from trytond.pool import Pool
 from product import (
     Product, ProductsImageSet, ProductsRelated, ProductCategory,
-    WebSite, WebsiteCategory, ProductTemplate
+    ProductTemplate
 )
 
 
@@ -21,6 +21,4 @@ def register():
         ProductTemplate,
         ProductsRelated,
         ProductCategory,
-        WebSite,
-        WebsiteCategory,
         module='nereid_catalog', type_='model')
