@@ -4,13 +4,6 @@ this repository contains the full copyright notices and license terms. -->
 <data>
     <xpath expr="/form/notebook" position="inside">
         <page string="Catalog Config." id="catalog">
-            <label name="root_navigation_model"/>
-            <field name="root_navigation_model"/>
-            <group id="root_category_node" colspan="2">
-                <label name="root_category"/>
-                <field name="root_category"/>
-            </group>
-            <field name="categories" colspan="4"/>
         </page>
         <page string="Currencies" id="currencies">
            <field name="currencies"/>

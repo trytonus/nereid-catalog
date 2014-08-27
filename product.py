@@ -10,9 +10,9 @@
 '''
 from collections import deque
 
-from nereid import render_template, cache, route
+from nereid import render_template, route
 from nereid.globals import session, request, current_app
-from nereid.helpers import slugify, key_from_list, url_for
+from nereid.helpers import slugify, url_for
 from nereid import jsonify, Markup, context_processor
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
@@ -27,7 +27,7 @@ from trytond import backend
 
 __all__ = [
     'Product', 'ProductsImageSet', 'ProductsRelated', 'ProductCategory',
-    'WebSite', 'WebsiteCategory', 'ProductTemplate',
+    'ProductTemplate',
 ]
 __metaclass__ = PoolMeta
 
@@ -162,11 +162,9 @@ class Product:
                      product/category/sub-cat/sub-sub-cat/product-uri
                      are generated
         """
-        categories = request.nereid_website.get_categories() + [None]
         products = cls.search([
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
-            ('category', 'in', categories),
             ('template.active', '=', True),
         ], limit=1)
         if not products:
@@ -274,10 +272,9 @@ class Product:
 
         :param page: The page in pagination to be displayed
         """
-        categories = request.nereid_website.get_categories() + [None]
+
         products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-            ('category', 'in', categories),
             ('template.active', '=', True),
         ], page, cls.per_page)
         return render_template('product-list.jinja', products=products)
@@ -307,10 +304,8 @@ class Product:
         """
         page = request.args.get('page', 1, type=int)
         query = request.args.get('q', '')
-        categories = request.nereid_website.get_categories() + [None]
         products = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-            ('category', 'in', categories),
             ('template.active', '=', True),
             ('name', 'ilike', '%' + query + '%'),
         ], page, cls.per_page)
@@ -322,10 +317,8 @@ class Product:
         """
         Returns a Sitemap Index Page
         """
-        categories = request.nereid_website.get_categories() + [None]
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
-            ('category', 'in', categories),
             ('template.active', '=', True),
         ])
         return index.render()
@@ -333,11 +326,9 @@ class Product:
     @classmethod
     @route('/sitemaps/product-<int:page>.xml')
     def sitemap(cls, page):
-        categories = request.nereid_website.get_categories() + [None]
         sitemap_section = SitemapSection(
             cls, [
                 ('displayed_on_eshop', '=', True),
-                ('category', 'in', categories),
                 ('template.active', '=', True),
             ], page
         )
@@ -516,10 +507,6 @@ class ProductCategory:
     image_preview = fields.Function(
         fields.Binary('Image Preview'), 'get_image_preview'
     )
-    sites = fields.Many2Many(
-        'nereid.website-product.category',
-        'category', 'website', 'Sites', states=DEFAULT_STATE
-    )
     sequence = fields.Integer('Sequence')
 
     @classmethod
@@ -576,7 +563,6 @@ class ProductCategory:
         categories = cls.search([
             ('displayed_on_eshop', '=', True),
             ('uri', '=', uri),
-            ('sites', '=', request.nereid_website.id)
         ])
         if not categories:
             return NotFound('Product Category Not Found')
@@ -604,7 +590,6 @@ class ProductCategory:
         """
         categories = Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-            ('sites', '=', request.nereid_website.id),
         ], page, cls.per_page)
         return render_template('category-list.jinja', categories=categories)
 
@@ -619,21 +604,10 @@ class ProductCategory:
         ], page, cls.per_page)
 
     @classmethod
-    @context_processor('root_categories')
-    def get_root_categories(cls, page=1):
-        """Return list of Root Categories."""
-        return Pagination(cls, [
-            ('displayed_on_eshop', '=', True),
-            ('sites', '=', request.nereid_website.id),
-            ('parent', '=', None),
-        ], page, cls.per_page)
-
-    @classmethod
     @route('/sitemaps/category-index.xml')
     def sitemap_index(cls):
         index = SitemapIndex(cls, [
             ('displayed_on_eshop', '=', True),
-            ('id', 'in', request.nereid_website.get_categories())
         ])
         return index.render()
 
@@ -643,7 +617,6 @@ class ProductCategory:
         sitemap_section = SitemapSection(
             cls, [
                 ('displayed_on_eshop', '=', True),
-                ('id', 'in', request.nereid_website.get_categories())
             ], page
         )
         sitemap_section.changefreq = 'daily'
@@ -667,62 +640,3 @@ class ProductCategory:
     @staticmethod
     def default_sequence():
         return 10
-
-
-class WebSite:
-    """
-    Add categories for products
-    """
-    __name__ = 'nereid.website'
-
-    categories = fields.Many2Many(
-        'nereid.website-product.category',
-        'website', 'category', 'Categories Displayed on E-Shop',
-        domain=[('displayed_on_eshop', '=', True)]
-    )
-    root_navigation_model = fields.Selection(
-        'get_root_navigation_model', 'Root Navigation Model', select=True,
-        help="The model with which the root navigation should be built"
-    )
-    root_category = fields.Many2One(
-        "product.category", 'Root Category', select=True, states={
-            "required": Eval('root_navigation_model') == 'product.category',
-            "invisible": Eval('root_navigation_model') != 'product.category',
-        }
-    )
-
-    @classmethod
-    def get_root_navigation_model(cls):
-        "Downstream modules can override the method and add entries to this"
-        return [
-            (None, ''),
-            ('product.category', 'Product Category'),
-        ]
-
-    def get_categories(self):
-        """Returns the IDS of the categories
-        """
-        cache_key = key_from_list([
-            Transaction().cursor.dbname,
-            Transaction().user,
-            'nereid.website.get_categories',
-            self.id,
-        ])
-        rv = cache.get(cache_key)
-        if rv is None:
-            rv = map(int, self.categories)
-            cache.set(cache_key, rv, 60 * 60)
-        return rv
-
-
-class WebsiteCategory(ModelSQL):
-    "Categories to be displayed on a website"
-    __name__ = 'nereid.website-product.category'
-    _table = 'website_category_rel'
-
-    website = fields.Many2One(
-        'nereid.website', 'Website',
-        ondelete='CASCADE', select=True, required=True)
-    category = fields.Many2One(
-        'product.category', 'Category',
-        ondelete='CASCADE', select=True, required=True)
