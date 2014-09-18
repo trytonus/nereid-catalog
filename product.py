@@ -138,7 +138,7 @@ class Product:
         """
         If the URI is empty, slugify template name into URI
         """
-        if not self.uri:
+        if not self.uri and self.template:
             return slugify(self.template.name)
         return self.uri
 
