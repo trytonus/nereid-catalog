@@ -111,6 +111,11 @@ class Product:
     use_template_description = fields.Boolean("Use template's description")
     use_template_images = fields.Boolean("Use template's images")
 
+    @classmethod
+    def validate(cls, products):
+        super(Product, cls).validate(products)
+        cls.check_uri_uniqueness(products)
+
     def get_default_image(self, name):
         """
         Returns default product image if any.
@@ -121,13 +126,25 @@ class Product:
     @classmethod
     def __setup__(cls):
         super(Product, cls).__setup__()
-        cls._sql_constraints += [
-            ('uri_uniq', 'UNIQUE(uri)', 'URI must be unique'),
-        ]
         cls.description.states['invisible'] = Bool(
             Eval('use_template_description')
         )
+        cls._error_messages.update({
+            'unique_uri': ('URI of Product must be Unique'),
+        })
         cls.per_page = 9
+
+    @classmethod
+    def __register__(cls, module_name):
+        TableHandler = backend.get('TableHandler')
+        cursor = Transaction().cursor
+        table = TableHandler(cursor, cls, module_name)
+
+        # Drop contraint for Unique URI on database
+        # Now using validation method for that purpose
+        table.drop_constraint('uri_uniq')
+
+        super(Product, cls).__register__(module_name)
 
     @staticmethod
     def default_displayed_on_eshop():
@@ -149,6 +166,22 @@ class Product:
     @staticmethod
     def default_use_template_images():
         return True
+
+    @classmethod
+    def check_uri_uniqueness(cls, products):
+        """
+        Ensure uniqueness of products uri.
+        """
+        query = ['OR']
+        for product in products:
+            arg = [
+                'AND',
+                ('id', '!=', product.id),
+                ('uri', 'ilike', product.uri),
+            ]
+            query.append(arg)
+        if cls.search(query):
+            cls.raise_user_error('unique_uri')
 
     @classmethod
     @route('/product/<uri>')
