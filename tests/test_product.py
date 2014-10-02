@@ -14,6 +14,7 @@ import trytond.tests.test_tryton
 from trytond.tests.test_tryton import POOL, USER, DB_NAME, CONTEXT
 from nereid.testing import NereidTestCase
 from trytond.transaction import Transaction
+from trytond.exceptions import UserError
 
 
 class TestProduct(NereidTestCase):
@@ -480,6 +481,71 @@ class TestProduct(NereidTestCase):
             ProductImageSet.set_default([image_set2])
             # Assert if image_set2 is set as default image set of variant
             self.assertEqual(product_variant.default_image_set, image_set2)
+
+    def test0060_test_uri_uniqueness(self):
+        """
+        Test that URIs are unique for Products
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            self.setup_defaults()
+
+            uom, = self.Uom.search([], limit=1)
+
+            # Creating Product Template
+            product_template, = self.Template.create([{
+                'name': 'Test Template',
+                'category': self.category.id,
+                'type': 'goods',
+                'list_price': Decimal('10'),
+                'cost_price': Decimal('5'),
+                'default_uom': uom.id,
+                'description': 'Template Description',
+            }])
+
+            product1 = self.Product.create([{
+                'template': product_template.id,
+                'displayed_on_eshop': True,
+                'uri': 'test-product',
+            }])
+            self.assert_(product1)
+
+            # Create new variants with the same URI
+            # Assert if UserError is raised
+            with self.assertRaises(UserError):
+                product2 = self.Product.create([{  # noqa
+                    'template': product_template.id,
+                    'displayed_on_eshop': True,
+                    'uri': 'Test-Product',
+                }])
+            with self.assertRaises(UserError):
+                product3 = self.Product.create([{  # noqa
+                    'template': product_template.id,
+                    'displayed_on_eshop': True,
+                    'uri': 'tesT-proDuct',
+                }])
+
+            # Creating Product Template
+            product_template_1, = self.Template.create([{
+                'name': 'Test Template',
+                'category': self.category.id,
+                'type': 'goods',
+                'list_price': Decimal('10'),
+                'cost_price': Decimal('5'),
+                'default_uom': uom.id,
+                'description': 'Template Description',
+            }])
+            self.assert_(product_template_1)
+
+            with self.assertRaises(UserError):
+                self.Template.write([product_template_1], {
+                    'products': [('create', [{
+                        'uri': 'product-1',
+                        'displayed_on_eshop': True
+                    }, {
+                        'uri': 'Product-1',
+                        'displayed_on_eshop': True
+                    }])]
+                })
 
 
 def suite():
