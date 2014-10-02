@@ -79,7 +79,6 @@ class TestProduct(NereidTestCase):
             'company': company.id,
             'application_user': USER,
             'default_locale': self.locale_en_us.id,
-            'guest_user': guest_user,
             'currencies': [('add', [usd.id])],
         }])
 
