@@ -79,7 +79,6 @@ class TestProduct(NereidTestCase):
             'company': company.id,
             'application_user': USER,
             'default_locale': self.locale_en_us.id,
-            'guest_user': guest_user,
             'currencies': [('add', [usd.id])],
         }])
 
@@ -523,6 +522,13 @@ class TestProduct(NereidTestCase):
                     'displayed_on_eshop': True,
                     'uri': 'tesT-proDuct',
                 }])
+            # Check if we are not checking URI uniqueness if
+            # product is marked as not displayed on eshop
+            product4 = self.Product.create([{
+                'template': product_template.id,
+                'uri': 'Test-Product',
+            }])
+            self.assert_(product4)
 
             # Creating Product Template
             product_template_1, = self.Template.create([{
