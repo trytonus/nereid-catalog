@@ -174,13 +174,20 @@ class Product:
         """
         query = ['OR']
         for product in products:
+            # Do not check for unique uri if product is marked as
+            # not displayed on eshop
+            if not product.displayed_on_eshop:
+                continue
+
             arg = [
-                'AND',
-                ('id', '!=', product.id),
-                ('uri', 'ilike', product.uri),
+                'AND', [
+                    ('id', '!=', product.id)
+                ], [
+                    ('uri', 'ilike', product.uri)
+                ]
             ]
             query.append(arg)
-        if cls.search(query):
+        if query != ['OR'] and cls.search(query):
             cls.raise_user_error('unique_uri')
 
     @classmethod
