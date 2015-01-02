@@ -12,6 +12,7 @@ from product import (
     Product, ProductsImageSet, ProductsRelated, ProductCategory,
     ProductTemplate
 )
+from website import WebSite
 
 
 def register():
@@ -21,4 +22,5 @@ def register():
         ProductTemplate,
         ProductsRelated,
         ProductCategory,
+        WebSite,
         module='nereid_catalog', type_='model')
