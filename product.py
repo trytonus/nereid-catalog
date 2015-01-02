@@ -337,21 +337,6 @@ class Product:
         return self.list_price
 
     @classmethod
-    @route('/search')
-    def quick_search(cls):
-        """A quick and dirty search which searches through the product.product
-        for an insensitive like and returns a pagination object the same.
-        """
-        page = request.args.get('page', 1, type=int)
-        query = request.args.get('q', '')
-        products = Pagination(cls, [
-            ('displayed_on_eshop', '=', True),
-            ('template.active', '=', True),
-            ('name', 'ilike', '%' + query + '%'),
-        ], page, cls.per_page)
-        return render_template('search-results.jinja', products=products)
-
-    @classmethod
     @route('/sitemaps/product-index.xml')
     def sitemap_index(cls):
         """
