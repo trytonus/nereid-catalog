@@ -16,9 +16,9 @@ from trytond.tests.test_tryton import POOL, USER, DB_NAME, CONTEXT, \
     test_view, test_depends
 from nereid.testing import NereidTestCase
 from trytond.transaction import Transaction
-from trytond.config import CONFIG
+from trytond.config import config
 
-CONFIG.options['data_path'] = '/tmp'
+config.set('database', 'path', '/tmp/')
 
 
 class TestCatalog(NereidTestCase):
@@ -119,7 +119,6 @@ class TestCatalog(NereidTestCase):
         )
 
         # Create website
-        url_map, = self.UrlMap.search([], limit=1)
         en_us, = self.Language.search([('code', '=', 'en_US')])
 
         self.locale_en_us, = self.Locale.create([{
@@ -129,7 +128,6 @@ class TestCatalog(NereidTestCase):
         }])
         self.NereidWebsite.create([{
             'name': 'localhost',
-            'url_map': url_map.id,
             'company': company.id,
             'application_user': USER,
             'default_locale': self.locale_en_us.id,
@@ -192,7 +190,6 @@ class TestCatalog(NereidTestCase):
         self.Product = POOL.get('product.product')
         self.Company = POOL.get('company.company')
         self.NereidUser = POOL.get('nereid.user')
-        self.UrlMap = POOL.get('nereid.url_map')
         self.Language = POOL.get('ir.lang')
         self.NereidWebsite = POOL.get('nereid.website')
         self.Party = POOL.get('party.party')
