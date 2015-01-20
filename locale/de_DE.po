@@ -1,0 +1,254 @@
+# 
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
+msgctxt "error:product.category:"
+msgid "URI must be unique"
+msgstr "Eine URI kann nur einmal vergeben werden."
+
+msgctxt "error:product.product:"
+msgid "URI of Product must be Unique"
+msgstr "URI kann nur einmal pro Artikel vergeben werden."
+
+msgctxt "error:product.tree_node:"
+msgid "recursion_error"
+msgstr ""
+
+msgctxt "field:product.category,description:"
+msgid "Description"
+msgstr "Beschreibung"
+
+msgctxt "field:product.category,displayed_on_eshop:"
+msgid "Displayed on E-Shop?"
+msgstr "Anzeige im Webshop"
+
+msgctxt "field:product.category,image:"
+msgid "Image"
+msgstr "Bild"
+
+msgctxt "field:product.category,image_preview:"
+msgid "Image Preview"
+msgstr "Vorschau"
+
+msgctxt "field:product.category,sequence:"
+msgid "Sequence"
+msgstr "Reihenfolge"
+
+msgctxt "field:product.category,uri:"
+msgid "URI"
+msgstr "URI"
+
+msgctxt "field:product.product,cross_sells:"
+msgid "Cross-Sells"
+msgstr "Kreuzverkäufe (Cross-Sells)"
+
+msgctxt "field:product.product,default_image:"
+msgid "Image"
+msgstr "Bild"
+
+msgctxt "field:product.product,default_image_set:"
+msgid "Default Image Set"
+msgstr "Standardbilderset"
+
+msgctxt "field:product.product,displayed_on_eshop:"
+msgid "Displayed on E-Shop?"
+msgstr "Anzeige im Webshop"
+
+msgctxt "field:product.product,image_sets:"
+msgid "Image Sets"
+msgstr "Bilder Sets"
+
+msgctxt "field:product.product,up_sells:"
+msgid "Up-Sells"
+msgstr "Up-Sells"
+
+msgctxt "field:product.product,uri:"
+msgid "URI"
+msgstr "URI"
+
+msgctxt "field:product.product,use_template_description:"
+msgid "Use template's description"
+msgstr "Beschreibung des Artikels verwenden"
+
+msgctxt "field:product.product,use_template_images:"
+msgid "Use template's images"
+msgstr "Bilder des Artikels verwenden"
+
+msgctxt "field:product.product-product.product,create_date:"
+msgid "Create Date"
+msgstr "Erstellungsdatum"
+
+msgctxt "field:product.product-product.product,create_uid:"
+msgid "Create User"
+msgstr "Erstellt durch"
+
+msgctxt "field:product.product-product.product,cross_sell:"
+msgid "Cross-sell Product"
+msgstr "Kreuzverkauf Artikel"
+
+msgctxt "field:product.product-product.product,id:"
+msgid "ID"
+msgstr "ID"
+
+msgctxt "field:product.product-product.product,product:"
+msgid "Product"
+msgstr "Artikel"
+
+msgctxt "field:product.product-product.product,rec_name:"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "field:product.product-product.product,up_sell:"
+msgid "Up-sell Product"
+msgstr "Up-Sell Artikel"
+
+msgctxt "field:product.product-product.product,write_date:"
+msgid "Write Date"
+msgstr "Zuletzt geändert"
+
+msgctxt "field:product.product-product.product,write_uid:"
+msgid "Write User"
+msgstr "Letzte Änderung durch"
+
+msgctxt "field:product.product.imageset,create_date:"
+msgid "Create Date"
+msgstr "Erstellungsdatum"
+
+msgctxt "field:product.product.imageset,create_uid:"
+msgid "Create User"
+msgstr "Erstellt durch"
+
+msgctxt "field:product.product.imageset,id:"
+msgid "ID"
+msgstr "ID"
+
+msgctxt "field:product.product.imageset,image:"
+msgid "Image"
+msgstr "Bild"
+
+msgctxt "field:product.product.imageset,image_preview:"
+msgid "Image Preview"
+msgstr "Vorschau"
+
+msgctxt "field:product.product.imageset,name:"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "field:product.product.imageset,product:"
+msgid "Product"
+msgstr "Artikel"
+
+msgctxt "field:product.product.imageset,rec_name:"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "field:product.product.imageset,template:"
+msgid "Template"
+msgstr "Vorlage"
+
+msgctxt "field:product.product.imageset,write_date:"
+msgid "Write Date"
+msgstr "Zuletzt geändert"
+
+msgctxt "field:product.product.imageset,write_uid:"
+msgid "Write User"
+msgstr "Letzte Änderung durch"
+
+msgctxt "field:product.template,default_image_set:"
+msgid "Default Image Set"
+msgstr "Standardbilderset"
+
+msgctxt "field:product.template,description:"
+msgid "Description"
+msgstr "Beschreibung"
+
+msgctxt "field:product.template,image_sets:"
+msgid "Images"
+msgstr "Bilder"
+
+msgctxt "field:product.template,products_displayed_on_eshop:"
+msgid "Products (Disp. on eShop)"
+msgstr "Artikel (im Webshop angezeigt)"
+
+msgctxt "model:product.product-product.product,name:"
+msgid "Related Product"
+msgstr "Verbundener Artikel"
+
+msgctxt "model:product.product.imageset,name:"
+msgid "Images for Product"
+msgstr "Artikelbilder"
+
+msgctxt "view:nereid.website:"
+msgid "Catalog Config."
+msgstr "Katalog Konfiguration"
+
+msgctxt "view:nereid.website:"
+msgid "Currencies"
+msgstr "Währungen"
+
+msgctxt "view:product.category:"
+msgid "Description"
+msgstr "Beschreibung"
+
+msgctxt "view:product.category:"
+msgid "E-Commerce Details"
+msgstr "E-Commerce Details"
+
+msgctxt "view:product.category:"
+msgid "Image"
+msgstr "Bild"
+
+msgctxt "view:product.category:"
+msgid "Update URI"
+msgstr "URI aktualisieren"
+
+msgctxt "view:product.product.imageset:"
+msgid "Image"
+msgstr "Bild"
+
+msgctxt "view:product.product.imageset:"
+msgid "Image Sets"
+msgstr "Bilder Sets"
+
+msgctxt "view:product.product.imageset:"
+msgid ""
+"Image has been successfully set as default. Please reload to see changes."
+msgstr ""
+"Bild erfolgreich als Standard gesetzt. Bitte neu laden um die Änderungen zu "
+"sehen."
+
+msgctxt "view:product.product.imageset:"
+msgid "Set Default"
+msgstr "Als Standard setzen"
+
+msgctxt "view:product.product:"
+msgid "Cross-Sells"
+msgstr "Kreuzverkäufe (Cross-Sells)"
+
+msgctxt "view:product.product:"
+msgid "Description"
+msgstr "Beschreibung"
+
+msgctxt "view:product.product:"
+msgid "E-Commerce Details"
+msgstr "E-Commerce Details"
+
+msgctxt "view:product.product:"
+msgid "Images"
+msgstr "Bilder"
+
+msgctxt "view:product.product:"
+msgid "Related Products"
+msgstr "Verbundene Artikel"
+
+msgctxt "view:product.product:"
+msgid "Up-Sells"
+msgstr "Up-Sells"
+
+msgctxt "view:product.template:"
+msgid "Description"
+msgstr "Beschreibung"
+
+msgctxt "view:product.template:"
+msgid "Image Sets"
+msgstr "Bilder Sets"
