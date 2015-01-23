@@ -625,7 +625,6 @@ class ProductCategory:
         """
         return Pagination(cls, [
             ('displayed_on_eshop', '=', True),
-            ('sites', '=', request.nereid_website.id)
         ], page, cls.per_page)
 
     @classmethod
