@@ -9,6 +9,7 @@
 
 '''
 from collections import deque
+from sql import Table
 
 from nereid import render_template, route
 from nereid.globals import session, request, current_app
@@ -26,8 +27,8 @@ from trytond.pool import Pool, PoolMeta
 from trytond import backend
 
 __all__ = [
-    'Product', 'ProductsImageSet', 'ProductsRelated', 'ProductCategory',
-    'ProductTemplate',
+    'Product', 'ProductsRelated', 'ProductCategory', 'ProductTemplate',
+    'StaticFile'
 ]
 __metaclass__ = PoolMeta
 
@@ -38,6 +39,43 @@ DEFAULT_STATE2 = {
 }
 
 
+class StaticFile:
+    __name__ = 'nereid.static.file'
+
+    product = fields.Many2One(
+        'product.product', 'Product', select=True
+    )
+    template = fields.Many2One(
+        'product.template', 'Template', select=True
+    )
+
+    @classmethod
+    def __register__(cls, module_name):
+        TableHandler = backend.get('TableHandler')
+        cursor = Transaction().cursor
+
+        super(StaticFile, cls).__register__(module_name)
+
+        sf_table = Table('nereid_static_file')
+
+        if TableHandler.table_exist(cursor, 'product_product_imageset'):
+            # Migrate data from ProductImageSet table to StaticFile table
+            imageset_table = Table('product_product_imageset')
+
+            query = sf_table.update(
+                columns=[sf_table.template, sf_table.product],
+                values=[imageset_table.template, imageset_table.product],
+                from_=[imageset_table],
+                where=(sf_table.id == imageset_table.image)
+            )
+            cursor.execute(*query)
+
+            TableHandler.drop_table(
+                cursor, 'product.product.imageset', 'product_product_imageset',
+                cascade=True
+            )
+
+
 class ProductTemplate:
     __name__ = "product.template"
 
@@ -46,12 +84,28 @@ class ProductTemplate:
         'get_products_displayed_on_eshop'
     )
     description = fields.Text("Description")
-    image_sets = fields.One2Many(
-        'product.product.imageset', 'template', 'Images',
+    static_files = fields.One2Many(
+        'nereid.static.file', 'template', 'Static Files',
+        add_remove=[
+            ('product', 'in', Eval('products')),
+        ],
+        depends=['products'],
+        order=[
+            ('sequence', 'ASC'),
+        ]
     )
-    default_image_set = fields.Many2One(
-        'product.product.imageset', 'Default Image Set', readonly=True
-    )
+    images = fields.Function(fields.One2Many(
+        'nereid.static.file', None, 'Images'
+    ), getter='get_template_images')
+
+    def get_template_images(self, name=None):
+        """
+        Getter for `images` function field
+        """
+        return map(int, filter(
+            lambda static_file: 'image' in static_file.mimetype,
+            self.static_files
+        ))
 
     def get_products_displayed_on_eshop(self, name=None):
         """
@@ -88,12 +142,23 @@ class Product:
     )
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
 
-    image_sets = fields.One2Many(
-        'product.product.imageset', 'product',
-        'Image Sets', states={
+    static_files = fields.One2Many(
+        'nereid.static.file', 'product', 'Static Files',
+        states={
             'invisible': Bool(Eval('use_template_images')),
-        }
+        },
+        add_remove=[
+            ('template', '=', Eval('template')),
+        ],
+        depends=['template'],
+        order=[
+            ('sequence', 'ASC'),
+        ]
     )
+    images = fields.Function(fields.One2Many(
+        'nereid.static.file', None, 'Images'
+    ), getter='get_product_images')
+
     up_sells = fields.Many2Many(
         'product.product-product.product',
         'product', 'up_sell', 'Up-Sells', states=DEFAULT_STATE
@@ -104,9 +169,6 @@ class Product:
     )
     default_image = fields.Function(
         fields.Many2One('nereid.static.file', 'Image'), 'get_default_image',
-    )
-    default_image_set = fields.Many2One(
-        'product.product.imageset', 'Default Image Set', readonly=True,
     )
     use_template_description = fields.Boolean("Use template's description")
     use_template_images = fields.Boolean("Use template's images")
@@ -120,8 +182,7 @@ class Product:
         """
         Returns default product image if any.
         """
-        images = self.get_images()
-        return images[0].id if images else None
+        return self.images[0].id if self.images else None
 
     @classmethod
     def __setup__(cls):
@@ -401,103 +462,24 @@ class Product:
             return Markup(self.template.description)
         return Markup(self.description)
 
+    def get_product_images(self, name=None):
+        """
+        Getter for `images` function field
+        """
+        return map(int, filter(
+            lambda static_file: 'image' in static_file.mimetype,
+            self.static_files
+        ))
+
     def get_images(self):
         """
         Get images of product variant.
-
         If the product is set to use the template's images, then
         the template images is sent back.
         """
         if self.use_template_images:
-            return map(lambda x: x.image, self.template.image_sets)
-        return map(lambda x: x.image, self.image_sets)
-
-
-class ProductsImageSet(ModelSQL, ModelView):
-    "Images for Product"
-    __name__ = 'product.product.imageset'
-
-    name = fields.Char("Name", required=True)
-    product = fields.Many2One(
-        'product.product', 'Product',
-        ondelete='CASCADE', select=True)
-    template = fields.Many2One(
-        'product.template', 'Template',
-        ondelete='CASCADE', select=True)
-    image = fields.Many2One(
-        'nereid.static.file', 'Image',
-        ondelete='CASCADE', select=True, required=True
-    )
-    image_preview = fields.Function(
-        fields.Binary('Image Preview'), 'get_image_preview'
-    )
-
-    @property
-    def large(self):
-        """
-        Return large image
-        """
-        return self.resize(1024, 1024)
-
-    @property
-    def medium(self):
-        """
-        Return medium image
-        """
-        return self.resize(500, 500)
-
-    @property
-    def thumbnail(self):
-        """
-        Return thumbnail image
-        """
-        return self.resize(100, 100)
-
-    def resize(self, width, height):
-        """
-        Return image with user specified dimensions
-        """
-        return self.image.transform_command().resize(width, height)
-
-    def get_image_preview(self, name=None):
-        return self.image.file_binary if self.image else None
-
-    @classmethod
-    def __register__(cls, module_name):
-        TableHandler = backend.get('TableHandler')
-        cursor = Transaction().cursor
-
-        table = TableHandler(cursor, cls, module_name)
-        if not table.column_exist('image'):
-            table.column_rename('large_image', 'image')
-
-        super(ProductsImageSet, cls).__register__(module_name)
-
-    @classmethod
-    def __setup__(cls):
-        super(ProductsImageSet, cls).__setup__()
-        cls._buttons.update({
-            'set_default': {},
-        })
-
-    @classmethod
-    @ModelView.button
-    def set_default(cls, image_sets):
-        """
-        Sets the image set as default image set
-        """
-        Product = Pool().get('product.product')
-        ProductTemplate = Pool().get('product.template')
-
-        for image_set in image_sets:
-            if image_set.product:
-                Product.write([image_set.product], {
-                    'default_image_set': image_set.id,
-                })
-            elif image_set.template:
-                ProductTemplate.write([image_set.template], {
-                    'default_image_set': image_set.id,
-                })
+            return self.template.images
+        return self.images
 
 
 class ProductsRelated(ModelSQL):

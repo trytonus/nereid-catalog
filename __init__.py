@@ -9,18 +9,18 @@
 '''
 from trytond.pool import Pool
 from product import (
-    Product, ProductsImageSet, ProductsRelated, ProductCategory,
-    ProductTemplate
+    Product, ProductsRelated, ProductCategory,
+    ProductTemplate, StaticFile
 )
 from website import WebSite
 
 
 def register():
     Pool.register(
-        ProductsImageSet,
         Product,
         ProductTemplate,
         ProductsRelated,
         ProductCategory,
+        StaticFile,
         WebSite,
         module='nereid_catalog', type_='model')
