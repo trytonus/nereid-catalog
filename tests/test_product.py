@@ -277,7 +277,6 @@ class TestProduct(NereidTestCase):
         If boolean field use_template_images is true return images
         of product template else return images of variant
         """
-        ProductImageSet = POOL.get('product.product.imageset')
         Product = POOL.get('product.product')
         StaticFolder = POOL.get("nereid.static.folder")
         StaticFile = POOL.get("nereid.static.file")
@@ -312,173 +311,21 @@ class TestProduct(NereidTestCase):
                 'cost_price': Decimal('5'),
                 'default_uom': uom.id,
                 'description': 'Description of template',
-                'products': [('create', self.Template.default_products())]
-            }])
-
-            image1, = ProductImageSet.create([{
-                'name': 'template_image',
-                'template': product_template,
-                'image': file
-            }])
-
-            product, = product_template.products
-
-            image2, = ProductImageSet.create([{
-                'name': 'product_image',
-                'product': product,
-                'image': file1
-            }])
-            self.assertEqual(product.get_images()[0].id, image1.id)
-            Product.write([product], {
-                'use_template_images': False,
-            })
-            self.assertEqual(product.get_images()[0].id, image2.id)
-
-    def test0040_get_default_image(self):
-        """
-        Test to get default image.
-
-        If boolean field use_template_images is checked return
-        template's first image else return variant's first image.
-
-        If image does not exist in template and variant return None
-
-        """
-        ProductImageSet = POOL.get('product.product.imageset')
-        Product = POOL.get('product.product')
-        StaticFolder = POOL.get("nereid.static.folder")
-        StaticFile = POOL.get("nereid.static.file")
-
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-
-            folder, = StaticFolder.create([{
-                'folder_name': 'Test'
-            }])
-            file_buffer = buffer('test-content')
-            file = StaticFile.create([{
-                'name': 'test.png',
-                'folder': folder.id,
-                'file_binary': file_buffer
-            }])[0]
-
-            file1 = StaticFile.create([{
-                'name': 'test1.png',
-                'folder': folder.id,
-                'file_binary': file_buffer
-            }])[0]
-
-            uom, = self.Uom.search([], limit=1)
-
-            # creating product template
-            product_template, = self.Template.create([{
-                'name': 'test template',
-                'category': self.category.id,
-                'type': 'goods',
-                'list_price': Decimal('10'),
-                'cost_price': Decimal('5'),
-                'default_uom': uom.id,
-                'description': 'Description of template',
+                'static_files': [('add', [file.id])],
                 'products': [('create', self.Template.default_products())]
             }])
 
             product, = product_template.products
-            self.assertEqual(product.default_image, None)
+            file1.product = product
+            file1.save()
 
-            image1, = ProductImageSet.create([{
-                'name': 'template_image',
-                'template': product_template,
-                'image': file
-            }])
-
-            image2, = ProductImageSet.create([{
-                'name': 'product_image',
-                'product': product,
-                'image': file1
-            }])
-
-            self.assertEqual(product.default_image.id, image1.id)
+            self.assertEqual(product.get_images()[0].id, file.id)
             Product.write([product], {
                 'use_template_images': False,
             })
-            self.assertEqual(product.default_image.id, image2.id)
+            self.assertEqual(product.get_images()[0].id, file1.id)
 
-    def test0050_test_default_image_set(self):
-        """
-        Test to check default image set for product variants and
-        templates.
-        """
-        ProductImageSet = POOL.get('product.product.imageset')
-        Product = POOL.get('product.product')
-        StaticFolder = POOL.get("nereid.static.folder")
-        StaticFile = POOL.get("nereid.static.file")
-
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-
-            folder, = StaticFolder.create([{
-                'folder_name': 'Test'
-            }])
-            file_buffer = buffer('test-content')
-            file = StaticFile.create([{
-                'name': 'test.png',
-                'folder': folder.id,
-                'file_binary': file_buffer
-            }])[0]
-
-            file1 = StaticFile.create([{
-                'name': 'test1.png',
-                'folder': folder.id,
-                'file_binary': file_buffer
-            }])[0]
-
-            uom, = self.Uom.search([], limit=1)
-
-            # Creating Product Template
-            product_template, = self.Template.create([{
-                'name': 'Test Template',
-                'category': self.category.id,
-                'type': 'goods',
-                'list_price': Decimal('10'),
-                'cost_price': Decimal('5'),
-                'default_uom': uom.id,
-                'description': 'Template Description',
-                'products': [('create', self.Template.default_products())]
-            }])
-
-            image_set1, = ProductImageSet.create([{
-                'name': 'template_image',
-                'template': product_template,
-                'image': file
-            }])
-
-            product_variant, = product_template.products
-
-            image_set2, = ProductImageSet.create([{
-                'name': 'product_image',
-                'product': product_variant,
-                'image': file1
-            }])
-            Product.write([product_variant], {
-                'use_template_images': False,
-            })
-
-            # Assert that there is no default image set for template
-            self.assertIsNone(product_template.default_image_set)
-            # Assert that there is no default image set for variant
-            self.assertIsNone(product_variant.default_image_set)
-
-            # Set image_set1 as default image set of product_template
-            ProductImageSet.set_default([image_set1])
-            # Assert if image_set1 is set as default image set of template
-            self.assertEqual(product_template.default_image_set, image_set1)
-
-            # Set image_set2 as default image set of product_variant
-            ProductImageSet.set_default([image_set2])
-            # Assert if image_set2 is set as default image set of variant
-            self.assertEqual(product_variant.default_image_set, image_set2)
-
-    def test0060_test_uri_uniqueness(self):
+    def test0040_test_uri_uniqueness(self):
         """
         Test that URIs are unique for Products
         """
@@ -550,7 +397,7 @@ class TestProduct(NereidTestCase):
                     }])]
                 })
 
-    def test_0070_get_categories(self):
+    def test_0050_get_categories(self):
         """
         Tests the `get_categories()` method.
         """
