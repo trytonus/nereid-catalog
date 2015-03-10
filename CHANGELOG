@@ -1,3 +1,11 @@
+Version 3.4.0.3
+===============
+
+* Removed all traces of the ProductImageSet model in favour of linking Static
+  Files to Products/Templates as One2Many field.
+* product_product_imageset table is migrated to nereid_static_file table if the
+  former is present.
+
 Version 3.2.1.0
 ===============
 
