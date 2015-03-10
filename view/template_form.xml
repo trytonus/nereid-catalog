@@ -11,10 +11,8 @@ this repository contains the full copyright notices and license terms. -->
         <page string="Description" id="template-description">
             <field name="description"/>
         </page>
-        <page string="Image Sets" id="template-image-set">
-            <label name="default_image_set"/>
-            <field name="default_image_set"/>
-            <field name="image_sets" colspan="4"/>
+        <page string="Static Files" id="template-static-files">
+            <field name="static_files" colspan="4"/>
         </page>
     </xpath>
 </data>

@@ -200,9 +200,9 @@ class TestCatalog(NereidTestCase):
             'home.jinja':
                 '''
                 {{request.nereid_website.get_currencies()}}
-                {{ product.image_sets[0].thumbnail }}
-                {{ product.image_sets[0].large }}
-                {{ product.image_sets[0].medium }}
+                {% for image in product.images %}
+                {{ image.name }}
+                {% endfor %}
                 ''',
             'login.jinja':
                 '{{ login_form.errors }} {{get_flashed_messages()}}',
@@ -442,11 +442,10 @@ class TestCatalog(NereidTestCase):
             self.assertEqual(len(template1.products_displayed_on_eshop), 2)
             self.assertEqual(len(template1.products), 3)
 
-    def test_0110_product_image_set(self):
+    def test_0110_product_images(self):
         """
-        Test for adding product image set
+        Test for adding product images
         """
-        ProductImageSet = POOL.get('product.product.imageset')
         Product = POOL.get('product.product')
         StaticFolder = POOL.get("nereid.static.folder")
         StaticFile = POOL.get("nereid.static.file")
@@ -466,27 +465,13 @@ class TestCatalog(NereidTestCase):
             }])[0]
 
             product = Product.search([])[0]
+            file.product = product
+            file.save()
 
-            image, = ProductImageSet.create([{
-                'name': 'test_image',
-                'product': product,
-                'image': file
-            }])
             app = self.get_app()
             with app.test_request_context('/'):
                 home_template = render_template('home.jinja', product=product)
-                self.assertTrue(
-                    '/static-file-transform/1/resize%2Cw_100%2Ch_100%2Cm_n.png'
-                    in home_template
-                )
-                self.assertTrue(
-                    '/static-file-transform/1/resize%2Cw_500%2Ch_500%2Cm_n.png'
-                    in home_template
-                )
-                self.assertTrue(
-                    '/static-file-transform/1/resize%2Cw_1024%2Ch_1024%2Cm_n'
-                    '.png' in home_template
-                )
+                self.assertTrue(file.name in home_template)
 
 
 def suite():
