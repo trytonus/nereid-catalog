@@ -61,7 +61,6 @@ class TestProduct(NereidTestCase):
 
         self.category, = self.Category.create([{
             'name': 'CategoryA',
-            'uri': 'category-1'
         }])
 
         # Create website
@@ -396,23 +395,6 @@ class TestProduct(NereidTestCase):
                         'displayed_on_eshop': True
                     }])]
                 })
-
-    def test_0050_get_categories(self):
-        """
-        Tests the `get_categories()` method.
-        """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.setup_defaults()
-
-            self.Category.create([{
-                'name': 'CategoryB',
-                'uri': 'category-2'
-            }, {
-                'name': 'CategoryC',
-                'uri': 'category-3'
-            }])
-
-            self.assertEqual(len(self.Category.get_categories()), 3)
 
 
 def suite():
