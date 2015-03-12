@@ -26,21 +26,15 @@ class TestCatalog(NereidTestCase):
     Test Catalog
     """
 
-    def _create_product_category(self, name, vlist):
+    def _create_product_category(self, name):
         """
         Creates a product category
 
-        Name is mandatory while other value may be provided as keyword
-        arguments
-
         :param name: Name of the product category
-        :param vlist: List of dictionaries of values to create
         """
         Category = POOL.get('product.category')
 
-        for values in vlist:
-            values['name'] = name
-        return Category.create(vlist)
+        return Category.create([{'name': name}])
 
     def _create_product_template(
         self, name, vlist, uri, uom=u'Unit', displayed_on_eshop=True
@@ -108,15 +102,9 @@ class TestCatalog(NereidTestCase):
         }])
 
         # Create product categories
-        self.category, = self._create_product_category(
-            'Category', [{'uri': 'category'}]
-        )
-        self.category2, = self._create_product_category(
-            'Category 2', [{'uri': 'category2'}]
-        )
-        self.category3, = self._create_product_category(
-            'Category 3', [{'uri': 'category3'}]
-        )
+        self.category, = self._create_product_category('Category')
+        self.category2, = self._create_product_category('Category 2')
+        self.category3, = self._create_product_category('Category 3')
 
         # Create website
         en_us, = self.Language.search([('code', '=', 'en_US')])
@@ -267,36 +255,7 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/products')
                 self.assertEqual(rv.data, '|product 1||product 2||product 3|')
 
-    def test_0030_category(self):
-        """
-        Check the category pages
-        """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
-
-            with app.test_client() as c:
-                rv = c.get('/category/category')
-                self.assertEqual(rv.data, '|product 1|')
-
-                rv = c.get('/category/category2')
-                self.assertEqual(rv.data, '|product 2|')
-
-    def test_0035_category_list(self):
-        """
-        Test the category list pages
-        """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
-
-            with app.test_client() as c:
-                rv = c.get('/catalog')
-                self.assertEqual(rv.data, '|Category||Category 2||Category 3|')
-
-    def test_0040_quick_search(self):
+    def test_0030_quick_search(self):
         """
         Check if quick search works
         """
@@ -309,7 +268,7 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/search?q=product')
                 self.assertEqual(rv.data, '|product 1||product 2||product 3|')
 
-    def test_0050_product_sitemap_index(self):
+    def test_0040_product_sitemap_index(self):
         """
         Assert that the sitemap index returns 1 result
         """
@@ -334,29 +293,7 @@ class TestCatalog(NereidTestCase):
                 self.assertTrue(xml.tag.endswith('urlset'))
                 self.assertEqual(len(xml.getchildren()), 3)
 
-    def test_0060_category_sitemap_index(self):
-        """
-        Assert that the sitemap index returns 1 result
-        """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
-
-            with app.test_client() as c:
-                rv = c.get('/sitemaps/category-index.xml')
-                xml = objectify.fromstring(rv.data)
-                self.assertTrue(xml.tag.endswith('sitemapindex'))
-                self.assertEqual(len(xml.getchildren()), 1)
-
-                rv = c.get(
-                    xml.sitemap.loc.pyval.split('localhost/', 1)[-1]
-                )
-                xml = objectify.fromstring(rv.data)
-                self.assertTrue(xml.tag.endswith('urlset'))
-                self.assertEqual(len(xml.getchildren()), 3)
-
-    def test_0070_get_recent_products(self):
+    def test_0060_get_recent_products(self):
         """
         Get the recent products list
         """
@@ -380,7 +317,7 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/products/+recent')
                 self.assertEqual(len(json.loads(rv.data)['products']), 2)
 
-    def test_0080_displayed_on_eshop(self):
+    def test_0070_displayed_on_eshop(self):
         """Ensure only displayed_on_eshop products are displayed on the site
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
@@ -392,7 +329,7 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/product/product-4')
                 self.assertEqual(rv.status_code, 404)
 
-    def test_0090_render_product_by_category(self):
+    def test_0080_render_product_by_category(self):
         """Render product using user friendly paths.
         """
         with Transaction().start(DB_NAME, USER, CONTEXT):
@@ -404,7 +341,7 @@ class TestCatalog(NereidTestCase):
                 rv = c.get('/product/category/sub-category/product-1')
                 self.assertEqual(rv.status_code, 200)
 
-    def test_0100_products_displayed_on_eshop(self):
+    def test_0090_products_displayed_on_eshop(self):
         """
         Test for the products_displayed_on_eshop function fields
         """
@@ -442,7 +379,7 @@ class TestCatalog(NereidTestCase):
             self.assertEqual(len(template1.products_displayed_on_eshop), 2)
             self.assertEqual(len(template1.products), 3)
 
-    def test_0110_product_images(self):
+    def test_0100_product_images(self):
         """
         Test for adding product images
         """

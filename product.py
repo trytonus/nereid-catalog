@@ -14,21 +14,20 @@ from sql import Table
 from nereid import render_template, route
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, url_for
-from nereid import jsonify, Markup, context_processor
+from nereid import jsonify, Markup
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
 from flask.ext.babel import format_currency
 
-from trytond.model import ModelView, ModelSQL, fields
+from trytond.model import ModelSQL, fields
 from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond import backend
 
 __all__ = [
-    'Product', 'ProductsRelated', 'ProductCategory', 'ProductTemplate',
-    'StaticFile'
+    'Product', 'ProductsRelated', 'ProductTemplate', 'StaticFile'
 ]
 __metaclass__ = PoolMeta
 
@@ -442,8 +441,6 @@ class Product:
             'code': self.code,
             'description': self.description,
         }
-        if self.category:
-            response['category'] = self.category._json()
         return response
 
     def get_description(self):
@@ -496,153 +493,3 @@ class ProductsRelated(ModelSQL):
     cross_sell = fields.Many2One(
         'product.product', 'Cross-sell Product',
         ondelete='CASCADE', select=True)
-
-
-class ProductCategory:
-    "Product Category extension for Nereid"
-    __name__ = "product.category"
-
-    uri = fields.Char(
-        'URI', select=True, states=DEFAULT_STATE2
-    )
-    displayed_on_eshop = fields.Boolean('Displayed on E-Shop?')
-    description = fields.Text('Description')
-    image = fields.Many2One(
-        'nereid.static.file', 'Image',
-        states=DEFAULT_STATE
-    )
-    image_preview = fields.Function(
-        fields.Binary('Image Preview'), 'get_image_preview'
-    )
-    sequence = fields.Integer('Sequence')
-
-    @classmethod
-    def __setup__(cls):
-        super(ProductCategory, cls).__setup__()
-        cls._order.insert(0, ('sequence', 'ASC'))
-        cls._sql_constraints += [
-            ('uri_uniq', 'UNIQUE(uri)', 'URI must be unique'),
-        ]
-        cls.per_page = 9
-
-    @staticmethod
-    def default_displayed_on_eshop():
-        return True
-
-    def get_image_preview(self, name=None):
-        if self.image:
-            return self.image.file_binary
-        return None
-
-    @fields.depends('name', 'uri', 'parent')
-    def on_change_with_uri(self):
-        """Slugifies the full name of a category to
-        make the uri on change of product name.
-        Slugification will occur only if there is no uri filled from before.
-        """
-        if self.name and not self.uri:
-            full_name = (self.parent and self.parent.rec_name or '') \
-                + self.name
-            return slugify(full_name)
-        return self.uri
-
-    @classmethod
-    @ModelView.button
-    def update_uri(cls, categories):
-        """Update the uri of the category from the complete name.
-        """
-        for category in categories:
-            cls.write([category], {'uri': slugify(category.rec_name)})
-
-    @classmethod
-    @route('/category/<uri>')
-    @route('/category/<uri>/<int:page>')
-    def render(cls, uri, page=1):
-        """
-        Renders the template 'category.jinja' with the category and the
-        products of the category paginated in the context
-
-        :param uri: URI of the product category
-        :param page: Integer value of the page
-        """
-        ProductTemplate = Pool().get('product.template')
-
-        categories = cls.search([
-            ('displayed_on_eshop', '=', True),
-            ('uri', '=', uri),
-        ])
-        if not categories:
-            return NotFound('Product Category Not Found')
-
-        # if only one category is found then it is rendered and
-        # if more than one are found then the first one is rendered
-        category = categories[0]
-        products = Pagination(ProductTemplate, [
-            ('products.displayed_on_eshop', '=', True),
-            ('category', '=', category.id),
-        ], page=page, per_page=cls.per_page)
-        return render_template(
-            'category.jinja', category=category, products=products
-        )
-
-    @classmethod
-    @route('/catalog')
-    @route('/catalog/<int:page>')
-    def render_list(cls, page=1):
-        """
-        Renders the list of all categories which are displayed_on_shop=True
-        paginated.
-
-        :param page: Integer ID of the page
-        """
-        categories = Pagination(cls, [
-            ('displayed_on_eshop', '=', True),
-        ], page, cls.per_page)
-        return render_template('category-list.jinja', categories=categories)
-
-    @classmethod
-    @context_processor('all_categories')
-    def get_categories(cls, page=1):
-        """Return list of categories
-        """
-        return Pagination(cls, [
-            ('displayed_on_eshop', '=', True),
-        ], page, cls.per_page)
-
-    @classmethod
-    @route('/sitemaps/category-index.xml')
-    def sitemap_index(cls):
-        index = SitemapIndex(cls, [
-            ('displayed_on_eshop', '=', True),
-        ])
-        return index.render()
-
-    @classmethod
-    @route('/sitemaps/category-<int:page>.xml')
-    def sitemap(cls, page):
-        sitemap_section = SitemapSection(
-            cls, [
-                ('displayed_on_eshop', '=', True),
-            ], page
-        )
-        sitemap_section.changefreq = 'daily'
-        return sitemap_section.render()
-
-    def get_absolute_url(self, **kwargs):
-        return url_for(
-            'product.category.render', uri=self.uri, **kwargs
-        )
-
-    def _json(self):
-        """
-        Return a JSON serializable dictionary of the category
-        """
-        return {
-            'name': self.name,
-            'id': self.id,
-            'rec_name': self.rec_name,
-        }
-
-    @staticmethod
-    def default_sequence():
-        return 10

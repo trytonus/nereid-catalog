@@ -7,12 +7,6 @@
 <tryton>
     <data>
 
-        <record model="ir.ui.view" id="category_view_form_nereid">
-            <field name="model">product.category</field>
-            <field name="inherit" ref="product.category_view_form" />
-            <field name="name">category_form_nereid</field>
-        </record>
-        
         <record model="ir.ui.view" id="product_view_form_nereid">
             <field name="model">product.product</field>
             <field name="inherit" ref="product.product_view_form" />
@@ -41,22 +35,6 @@
             <field name="perm_create" eval="True"/>
             <field name="perm_delete" eval="False"/>
         </record>
-        <record model="ir.model.access" id="access_product_category">
-            <field name="model" search="[('model', '=', 'product.category')]"/>
-            <field name="perm_read" eval="True"/>
-            <field name="perm_write" eval="False"/>
-            <field name="perm_create" eval="False"/>
-            <field name="perm_delete" eval="False"/>
-        </record>
-        <record model="ir.model.access" id="access_product_category_nereid_admin">
-            <field name="model" search="[('model', '=', 'product.category')]"/>
-            <field name="group" ref="nereid.group_nereid_admin"/>
-            <field name="perm_read" eval="True"/>
-            <field name="perm_write" eval="True"/>
-            <field name="perm_create" eval="True"/>
-            <field name="perm_delete" eval="False"/>
-        </record>
-
         <record id="inherit_nereid_website_product" model="ir.ui.view">
             <field name="model">nereid.website</field>
             <field name="inherit" ref="nereid.website_view_form"/>
