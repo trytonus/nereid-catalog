@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<form string="Media">
+    <label name="sequence"/>
+    <field name="sequence"/>
+    <label name="static_file"/>
+    <field name="static_file"/>
+</form>

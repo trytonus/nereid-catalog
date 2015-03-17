@@ -41,5 +41,16 @@
             <field name="name">nereid_website_product</field>
         </record>
 
+        <!--Product Media View-->
+        <record model="ir.ui.view" id="product_media_tree">
+            <field name="model">product.media</field>
+            <field name="type">tree</field>
+            <field name="name">product_media_tree</field>
+        </record>
+        <record model="ir.ui.view" id="product_media_form">
+            <field name="model">product.media</field>
+            <field name="type">form</field>
+            <field name="name">product_media_form</field>
+        </record>
     </data>
 </tryton>
