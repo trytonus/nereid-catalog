@@ -11,8 +11,8 @@ this repository contains the full copyright notices and license terms. -->
         <page string="Description" id="template-description">
             <field name="description"/>
         </page>
-        <page string="Static Files" id="template-static-files">
-            <field name="static_files" colspan="4"/>
+        <page string="Media" id="template-media">
+            <field name="media" colspan="4"/>
         </page>
     </xpath>
 </data>

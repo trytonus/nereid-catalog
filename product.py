@@ -4,7 +4,7 @@
 
     Products catalogue display
 
-    :copyright: (c) 2010-2014 by Openlabs Technologies & Consulting (P) Ltd.
+    :copyright: (c) 2010-2015 by Openlabs Technologies & Consulting (P) Ltd.
     :license: GPLv3, see LICENSE for more details
 
 '''
@@ -20,14 +20,14 @@ from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
 from flask.ext.babel import format_currency
 
-from trytond.model import ModelSQL, fields
+from trytond.model import ModelSQL, ModelView, fields
 from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond import backend
 
 __all__ = [
-    'Product', 'ProductsRelated', 'ProductTemplate', 'StaticFile'
+    'Product', 'ProductsRelated', 'ProductTemplate', 'ProductMedia'
 ]
 __metaclass__ = PoolMeta
 
@@ -38,41 +38,50 @@ DEFAULT_STATE2 = {
 }
 
 
-class StaticFile:
-    __name__ = 'nereid.static.file'
+class ProductMedia(ModelSQL, ModelView):
+    "Product Media"
+    __name__ = "product.media"
 
-    product = fields.Many2One(
-        'product.product', 'Product', select=True
-    )
-    template = fields.Many2One(
-        'product.template', 'Template', select=True
-    )
+    sequence = fields.Integer("Sequence", required=True, select=True)
+    static_file = fields.Many2One(
+        "nereid.static.file", "Static File", required=True, select=True)
+    product = fields.Many2One("product.product", "Product", select=True)
+    template = fields.Many2One("product.template", "Template", select=True)
 
     @classmethod
     def __register__(cls, module_name):
         TableHandler = backend.get('TableHandler')
         cursor = Transaction().cursor
 
-        super(StaticFile, cls).__register__(module_name)
+        super(ProductMedia, cls).__register__(module_name)
 
-        sf_table = Table('nereid_static_file')
+        media_table = cls.__table__()
 
         if TableHandler.table_exist(cursor, 'product_product_imageset'):
-            # Migrate data from ProductImageSet table to StaticFile table
+            # Migrate data from ProductImageSet table to ProductMedia table
             imageset_table = Table('product_product_imageset')
 
-            query = sf_table.update(
-                columns=[sf_table.template, sf_table.product],
-                values=[imageset_table.template, imageset_table.product],
-                from_=[imageset_table],
-                where=(sf_table.id == imageset_table.image)
-            )
-            cursor.execute(*query)
+            cursor.execute(*media_table.insert(
+                columns=[
+                    media_table.product, media_table.template,
+                    media_table.static_file,
+                ],
+                values=[
+                    imageset_table.select(
+                        imageset_table.product, imageset_table.template,
+                        imageset_table.image
+                    )
+                ]
+            ))
 
             TableHandler.drop_table(
                 cursor, 'product.product.imageset', 'product_product_imageset',
                 cascade=True
             )
+
+    @staticmethod
+    def default_sequence():
+        return 10
 
 
 class ProductTemplate:
@@ -83,28 +92,21 @@ class ProductTemplate:
         'get_products_displayed_on_eshop'
     )
     description = fields.Text("Description")
-    static_files = fields.One2Many(
-        'nereid.static.file', 'template', 'Static Files',
-        add_remove=[
-            ('product', 'in', Eval('products')),
-        ],
-        depends=['products'],
-        order=[
-            ('sequence', 'ASC'),
-        ]
+    media = fields.One2Many("product.media", "template", "Media")
+    images = fields.Function(
+        fields.One2Many('nereid.static.file', None, 'Images'),
+        getter='get_template_images'
     )
-    images = fields.Function(fields.One2Many(
-        'nereid.static.file', None, 'Images'
-    ), getter='get_template_images')
 
     def get_template_images(self, name=None):
         """
         Getter for `images` function field
         """
-        return map(int, filter(
-            lambda static_file: 'image' in static_file.mimetype,
-            self.static_files
-        ))
+        template_images = []
+        for media in self.media:
+            if 'image' in media.static_file.mimetype:
+                template_images.append(media.static_file.id)
+        return template_images
 
     def get_products_displayed_on_eshop(self, name=None):
         """
@@ -141,23 +143,11 @@ class Product:
     )
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
 
-    static_files = fields.One2Many(
-        'nereid.static.file', 'product', 'Static Files',
-        states={
-            'invisible': Bool(Eval('use_template_images')),
-        },
-        add_remove=[
-            ('template', '=', Eval('template')),
-        ],
-        depends=['template'],
-        order=[
-            ('sequence', 'ASC'),
-        ]
+    media = fields.One2Many("product.media", "product", "Media")
+    images = fields.Function(
+        fields.One2Many('nereid.static.file', None, 'Images'),
+        getter='get_product_images'
     )
-    images = fields.Function(fields.One2Many(
-        'nereid.static.file', None, 'Images'
-    ), getter='get_product_images')
-
     up_sells = fields.Many2Many(
         'product.product-product.product',
         'product', 'up_sell', 'Up-Sells', states=DEFAULT_STATE
@@ -463,10 +453,11 @@ class Product:
         """
         Getter for `images` function field
         """
-        return map(int, filter(
-            lambda static_file: 'image' in static_file.mimetype,
-            self.static_files
-        ))
+        product_images = []
+        for media in self.media:
+            if 'image' in media.static_file.mimetype:
+                product_images.append(media.static_file.id)
+        return product_images
 
     def get_images(self):
         """

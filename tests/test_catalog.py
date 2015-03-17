@@ -2,7 +2,7 @@
 '''
     Catalog test suite
 
-    :copyright: (c) 2010-2013 by Openlabs Technologies & Consulting (P) Ltd.
+    :copyright: (c) 2010-2015 by Openlabs Technologies & Consulting (P) Ltd.
     :license: GPLv3, see LICENSE for more details
 
 '''
@@ -386,6 +386,7 @@ class TestCatalog(NereidTestCase):
         Product = POOL.get('product.product')
         StaticFolder = POOL.get("nereid.static.folder")
         StaticFile = POOL.get("nereid.static.file")
+        Media = POOL.get('product.media')
 
         with Transaction().start(DB_NAME, USER, CONTEXT):
             self.setup_defaults()
@@ -395,15 +396,19 @@ class TestCatalog(NereidTestCase):
                 'folder_name': 'Test'
             }])
             file_buffer = buffer('test-content')
-            file = StaticFile.create([{
+            file, = StaticFile.create([{
                 'name': 'test.png',
                 'folder': folder.id,
                 'file_binary': file_buffer
-            }])[0]
+            }])
 
-            product = Product.search([])[0]
-            file.product = product
-            file.save()
+            product, = Product.search([], limit=1)
+
+            Media.create([{
+                'product': product.id,
+                'template': product.template.id,
+                'static_file': file.id,
+            }])
 
             app = self.get_app()
             with app.test_request_context('/'):
