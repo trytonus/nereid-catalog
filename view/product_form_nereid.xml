@@ -43,9 +43,9 @@ this repository contains the full copyright notices and license terms. -->
                             id="sepr_cross_sells"/>
                         <field name="cross_sells" colspan="4" />
                     </page>
-                    <page string="Static Files" id="static_files"
+                    <page string="Media" id="product_media"
                         states="{'invisible': Bool(Eval('use_template_images'))}">
-                        <field name="static_files" colspan="4"/>
+                        <field name="media" colspan="4"/>
                     </page>
                 </notebook>
             </page>

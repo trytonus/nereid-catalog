@@ -310,13 +310,19 @@ class TestProduct(NereidTestCase):
                 'cost_price': Decimal('5'),
                 'default_uom': uom.id,
                 'description': 'Description of template',
-                'static_files': [('add', [file.id])],
+                'media': [('create', [{
+                    'static_file': file.id,
+                }])],
                 'products': [('create', self.Template.default_products())]
             }])
 
             product, = product_template.products
-            file1.product = product
-            file1.save()
+
+            Product.write([product], {
+                'media': [('create', [{
+                    'static_file': file1.id,
+                }])]
+            })
 
             self.assertEqual(product.get_images()[0].id, file.id)
             Product.write([product], {
