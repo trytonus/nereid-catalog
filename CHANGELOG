@@ -1,3 +1,10 @@
+Version 3.4.2.0
+===============
+
+This release intrdouces Product Media model to store media
+items on product and template. Also provide safe migration
+from product.image_set.
+
 Version 3.4.0.3
 ===============
 
