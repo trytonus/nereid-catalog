@@ -9,7 +9,7 @@
 
 '''
 from collections import deque
-from sql import Table
+from sql import Table, Literal
 
 from nereid import render_template, route
 from nereid.globals import session, request, current_app
@@ -63,15 +63,15 @@ class ProductMedia(ModelSQL, ModelView):
 
             cursor.execute(*media_table.insert(
                 columns=[
+                    media_table.sequence,
                     media_table.product, media_table.template,
                     media_table.static_file,
                 ],
-                values=[
-                    imageset_table.select(
-                        imageset_table.product, imageset_table.template,
-                        imageset_table.image
-                    )
-                ]
+                values=imageset_table.select(
+                    Literal(10),
+                    imageset_table.product, imageset_table.template,
+                    imageset_table.image
+                )
             ))
 
             TableHandler.drop_table(
