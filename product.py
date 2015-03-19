@@ -104,7 +104,8 @@ class ProductTemplate:
         """
         template_images = []
         for media in self.media:
-            if 'image' in media.static_file.mimetype:
+            if media.static_file.mimetype and \
+                    'image' in media.static_file.mimetype:
                 template_images.append(media.static_file.id)
         return template_images
 
