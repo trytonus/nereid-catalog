@@ -49,6 +49,12 @@ class ProductMedia(ModelSQL, ModelView):
     template = fields.Many2One("product.template", "Template", select=True)
 
     @classmethod
+    def __setup__(cls):
+        super(ProductMedia, cls).__setup__()
+
+        cls._order.insert(0, ('sequence', 'ASC'))
+
+    @classmethod
     def __register__(cls, module_name):
         TableHandler = backend.get('TableHandler')
         cursor = Transaction().cursor
