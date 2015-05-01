@@ -189,7 +189,7 @@ class Product:
         cls._error_messages.update({
             'unique_uri': ('URI of Product must be Unique'),
         })
-        cls.per_page = 9
+        cls.per_page = 12
 
     @classmethod
     def __register__(cls, module_name):
