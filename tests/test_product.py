@@ -402,6 +402,60 @@ class TestProduct(NereidTestCase):
                     }])]
                 })
 
+    def test0050_test_rec_name_sorting(self):
+        """
+        Test if rec_name field is sorted
+        """
+        ProductCategory = POOL.get('product.category')
+
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            self.setup_defaults()
+
+            product_category2, = ProductCategory.create([{
+                'name': 'Personel',
+            }])
+
+            product_category1, = ProductCategory.create([{
+                'name': 'Automobile',
+            }])
+
+            product_category3, = ProductCategory.create([{
+                'name': 'Household',
+            }])
+
+            product_category4, = ProductCategory.create([{
+                'name': 'Cars',
+                'parent': product_category1.id
+            }])
+
+            product_category5, = ProductCategory.create([{
+                'name': 'Watches',
+            }])
+
+            # With sorting
+            categories = ProductCategory.search([], order=[('rec_name', 'ASC')])
+
+            # Category first element is Automobile/car (child)
+            self.assertEqual(categories[0], product_category4)
+
+            # Category last element is Watches  (last created)
+            self.assertEqual(categories[-1], product_category5)
+
+            # Category Second element is Automobile (parent)
+            self.assertEqual(categories[1], product_category1)
+
+            # Own order
+            categories = ProductCategory.search([])
+
+            # Category first element is Automobile/car (child)
+            self.assertEqual(categories[0], product_category1)
+
+            # Category last element is Watches  (last created)
+            self.assertEqual(categories[-1], product_category5)
+
+            # Category Second element is Automobile (parent)
+            self.assertEqual(categories[1], product_category4)
+
 
 def suite():
     "Test suite"
