@@ -25,9 +25,11 @@ from trytond.pyson import Eval, Not, Bool
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond import backend
+from sql import Null
 
 __all__ = [
-    'Product', 'ProductsRelated', 'ProductTemplate', 'ProductMedia'
+    'Product', 'ProductsRelated', 'ProductTemplate',
+    'ProductMedia', 'ProductCategory'
 ]
 __metaclass__ = PoolMeta
 
@@ -491,3 +493,17 @@ class ProductsRelated(ModelSQL):
     cross_sell = fields.Many2One(
         'product.product', 'Cross-sell Product',
         ondelete='CASCADE', select=True)
+
+
+class ProductCategory:
+    __name__ = 'product.category'
+
+    @staticmethod
+    def order_rec_name(tables):
+        table, _ = tables[None]
+        return [table.parent == Null, table.parent, table.name]
+
+    @classmethod
+    def __setup__(cls):
+        super(ProductCategory, cls).__setup__()
+        cls.rec_name.string = "Parent/name"
