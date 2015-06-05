@@ -172,6 +172,25 @@ class Product:
     use_template_images = fields.Boolean("Use template's images")
 
     @classmethod
+    def copy(cls, products, default=None):
+        """Duplicate products
+        """
+        if default is None:
+            default = {}
+        default = default.copy()
+
+        duplicate_products = []
+        for index, product in enumerate(products, start=1):
+            if product.displayed_on_eshop:
+                default['uri'] = "%s-copy-%d" % (product.uri, index)
+
+            duplicate_products.extend(
+                super(Product, cls).copy([product], default)
+            )
+
+        return duplicate_products
+
+    @classmethod
     def validate(cls, products):
         super(Product, cls).validate(products)
         cls.check_uri_uniqueness(products)
