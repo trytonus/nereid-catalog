@@ -99,6 +99,9 @@ class ProductTemplate:
         fields.One2Many('product.product', None, 'Products (Disp. on eShop)'),
         'get_products_displayed_on_eshop'
     )
+
+    long_description = fields.Text('Long Description')
+
     description = fields.Text("Description")
     media = fields.One2Many("product.media", "template", "Media")
     images = fields.Function(
@@ -150,6 +153,7 @@ class Product:
     uri = fields.Char(
         'URI', select=True, states=DEFAULT_STATE2
     )
+
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
 
     media = fields.One2Many("product.media", "product", "Media")
@@ -441,6 +445,20 @@ class Product:
             'description': self.description,
         }
         return response
+
+    def get_long_description(self):
+        """
+        Get long description of product.
+
+        If the product is set to use the template's long description, then
+        the template long description is sent back.
+
+        The returned value is a `~jinja2.Markup` object which makes it
+        HTML safe and can be used directly in templates. It is recommended
+        to use this method instead of trying to wrap this logic in the
+        templates.
+        """
+        return Markup(self.long_description)
 
     def get_description(self):
         """

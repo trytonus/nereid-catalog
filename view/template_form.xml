@@ -9,7 +9,12 @@ this repository contains the full copyright notices and license terms. -->
             <field name="products"/>
         </page>
         <page string="Description" id="template-description">
-            <field name="description"/>
+            <group col="2" colspan="6" yexpand="1" yfill="1" id="product_description">
+                <separator name="description"/>
+                <separator name="long_description"/>
+                <field name="description" />
+                <field name="long_description"/>
+            </group>
         </page>
         <page string="Media" id="template-media">
             <field name="media" colspan="4"/>
