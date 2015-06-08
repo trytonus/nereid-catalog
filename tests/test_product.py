@@ -456,6 +456,35 @@ class TestProduct(NereidTestCase):
             # Category Second element is Automobile (parent)
             self.assertEqual(categories[1], product_category4)
 
+    def test0060_copy_product(self):
+        '''
+        Test product copy
+        '''
+
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            self.setup_defaults()
+            uom, = self.Uom.search([], limit=1)
+            self.Template.create([{
+                'name': 'Product-1',
+                'category': self.category.id,
+                'type': 'goods',
+                'list_price': Decimal('10'),
+                'cost_price': Decimal('5'),
+                'default_uom': uom.id,
+                'products': [
+                    ('create', [{
+                        'uri': 'product1',
+                        'displayed_on_eshop': True
+                    }])
+                ]
+            }])
+
+            product1, = self.Product.search([])
+
+            product2, = self.Product.copy([product1])
+
+            self.assertEqual(product2.uri, '%s-copy-1' % product1.uri)
+
 
 def suite():
     "Test suite"
