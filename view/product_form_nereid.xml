@@ -19,8 +19,12 @@ this repository contains the full copyright notices and license terms. -->
     <xpath expr="/form/notebook" position="inside">
         <page string="Description" id="desc"
                 states="{'invisible': Bool(Eval('use_template_description'))}">
-            <separator name="description" colspan="4"/>
-            <field name="description" colspan="4"/>
+            <group col="2" colspan="6" yexpand="1" yfill="1" id="product_description">
+                <separator name="description"/>
+                <separator name="long_description"/>
+                <field name="description" />
+                <field name="long_description"/>
+            </group>
         </page>
         <page string="E-Commerce Details"
                 id="ecomm_det"
