@@ -155,7 +155,7 @@ class Product:
     )
 
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
-
+    long_description = fields.Text('Long Description')
     media = fields.One2Many("product.media", "product", "Media")
     images = fields.Function(
         fields.One2Many('nereid.static.file', None, 'Images'),
@@ -477,6 +477,8 @@ class Product:
         to use this method instead of trying to wrap this logic in the
         templates.
         """
+        if self.use_template_description:
+            return Markup(self.template.long_description)
         return Markup(self.long_description)
 
     def get_description(self):
