@@ -393,7 +393,7 @@ class TestCatalog(NereidTestCase):
             self.create_test_products()
 
             folder, = StaticFolder.create([{
-                'folder_name': 'Test'
+                'name': 'Test'
             }])
             file_buffer = buffer('test-content')
             file, = StaticFile.create([{

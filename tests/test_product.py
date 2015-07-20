@@ -284,7 +284,7 @@ class TestProduct(NereidTestCase):
             self.setup_defaults()
 
             folder, = StaticFolder.create([{
-                'folder_name': 'Test'
+                'name': 'Test'
             }])
             file_buffer = buffer('test-content')
             file = StaticFile.create([{
