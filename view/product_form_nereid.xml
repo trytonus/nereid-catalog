@@ -34,23 +34,19 @@ this repository contains the full copyright notices and license terms. -->
             <label name="use_template_images"/>
             <field name="use_template_images"/>
             <notebook colspan="4" >
-                <page string="Related Products" col="4"
-                    id="related_products" >
-                    <separator colspan="4" string="Up-Sells"
-                        id="sepr_up_sells"/>
-                    <field name="up_sells" colspan="4" />
-                    <newline />
-                    <separator
-                        colspan="4"
-                        string="Cross-Sells"
-                        id="sepr_cross_sells"/>
-                    <field name="cross_sells" colspan="4" />
-                </page>
                 <page string="Media" id="product_media"
                     states="{'invisible': Bool(Eval('use_template_images'))}">
                     <field name="media" colspan="4"/>
                 </page>
             </notebook>
+        </page>
+        <page string="Related Products" col="4" id="related_products"
+            states="{'invisible': Not(Bool(Eval('displayed_on_eshop')))}">
+            <separator colspan="4" string="Up-Sells" id="sepr_up_sells"/>
+            <field name="up_sells" colspan="4" />
+            <newline />
+            <separator colspan="4" string="Cross-Sells" id="sepr_cross_sells"/>
+            <field name="cross_sells" colspan="4" />
         </page>
     </xpath>
 </data>
