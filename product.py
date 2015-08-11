@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-    product
-
-    Products catalogue display
-
-    :copyright: (c) 2010-2015 by Openlabs Technologies & Consulting (P) Ltd.
-    :license: GPLv3, see LICENSE for more details
-
-'''
 from collections import deque
 from sql import Table, Literal
 

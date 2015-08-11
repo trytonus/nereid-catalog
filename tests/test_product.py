@@ -1,12 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-    test_product
-
-    Test Product
-
-    :copyright: (c) 2013-2014 by Openlabs Technologies & Consulting (P) Limited
-    :license: BSD, see LICENSE for more details.
-"""
 import unittest
 from decimal import Decimal
 
