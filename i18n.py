@@ -1,14 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-
-    Internationalisation for Nereid
-
-    :copyright: (c) 2010-2012 by Openlabs Technologies & Consulting (P) Ltd.
-    :license: GPLv3, see LICENSE for more details
-
-    WARNING: This is incomplete and is under development
-
-'''
 from __future__ import absolute_import
 import os
 import logging

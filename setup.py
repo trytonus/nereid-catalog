@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# This file is part of Tryton and Nereid. The COPYRIGHT file at the top level of
-# this repository contains the full copyright notices and license terms.
 import sys
 import unittest
 import re
@@ -72,14 +70,14 @@ setup(
     name='trytond_nereid_catalog',
     version=info.get('version'),
     description="Nereid Catalog",
-    author="Openlabs Technologies & consulting (P) Limited",
-    author_email='info@openlabs.co.in',
-    url='http://www.openlabs.co.in',
+    author="Fulfil.IO Inc.",
+    author_email='support@fulfil.io',
+    url='https://www.fulfil.io',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Plugins',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
@@ -100,7 +98,7 @@ setup(
             + ['tryton.cfg', 'locale/*.po', 'tests/*.rst', 'view/*.xml']
             + ['i18n/*.pot', 'i18n/pt_BR/LC_MESSAGES/*'],
     },
-    license='GPL-3',
+    license='BSD',
     install_requires=requires,
     zip_safe=False,
     entry_points="""

@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-    website
-
-    Nereid Website
-
-    :copyright: (c) 2014 by Openlabs Technologies & Consulting (P) Ltd.
-    :license: GPLv3, see LICENSE for more details
-
-'''
 from trytond.pool import Pool, PoolMeta
 from nereid import request, route, render_template
 from nereid.contrib.pagination import Pagination
