@@ -489,8 +489,11 @@ class Product:
         templates.
         """
         if self.use_template_description:
-            return Markup(self.template.description)
-        return Markup(self.description)
+            description = self.template.description
+        else:
+            description = self.description
+        if description:
+            return Markup(description)
 
     def get_product_images(self, name=None):
         """
