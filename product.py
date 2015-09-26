@@ -171,6 +171,17 @@ class Product:
     use_template_images = fields.Boolean("Use template's images")
 
     @classmethod
+    def view_attributes(cls):
+        return super(Product, cls).view_attributes() + [
+            ('//page[@id="desc"]', 'states', {
+                'invisible': Bool(Eval('use_template_description'))
+            }), ('//page[@id="ecomm_det"]', 'states', {
+                'invisible': Not(Bool(Eval('displayed_on_eshop')))
+            }), ('//page[@id="related_products"]', 'states', {
+                'invisible': Not(Bool(Eval('displayed_on_eshop')))
+            })]
+
+    @classmethod
     def copy(cls, products, default=None):
         """Duplicate products
         """

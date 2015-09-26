@@ -17,8 +17,7 @@ this repository contains the full copyright notices and license terms. -->
         position="replace">
     </xpath>
     <xpath expr="/form/notebook" position="inside">
-        <page string="Description" id="desc"
-                states="{'invisible': Bool(Eval('use_template_description'))}">
+        <page string="Description" id="desc">
             <group col="2" colspan="6" yexpand="1" yfill="1" id="product_description">
                 <separator name="description"/>
                 <separator name="long_description"/>
@@ -26,17 +25,14 @@ this repository contains the full copyright notices and license terms. -->
                 <field name="long_description"/>
             </group>
         </page>
-        <page string="E-Commerce Details"
-                id="ecomm_det"
-                states="{'invisible': Not(Bool(Eval('displayed_on_eshop')))}">
+        <page string="E-Commerce Details" id="ecomm_det">
             <label name="uri"/>
             <field name="uri"/>
             <label name="use_template_images"/>
             <field name="use_template_images"/>
             <field name="media" colspan="4"/>
         </page>
-        <page string="Related Products" col="4" id="related_products"
-            states="{'invisible': Not(Bool(Eval('displayed_on_eshop')))}">
+        <page string="Related Products" col="4" id="related_products">
             <separator colspan="4" string="Up-Sells" id="sepr_up_sells"/>
             <field name="up_sells" colspan="4" />
             <newline />
