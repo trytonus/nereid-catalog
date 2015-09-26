@@ -5,13 +5,22 @@ from decimal import Decimal
 from lxml import objectify
 from nereid import render_template
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import POOL, USER, DB_NAME, CONTEXT, \
-    test_view, test_depends
+from trytond.tests.test_tryton import (
+    POOL, USER, DB_NAME, CONTEXT, ModuleTestCase
+)
 from nereid.testing import NereidTestCase
 from trytond.transaction import Transaction
 from trytond.config import config
 
 config.set('database', 'path', '/tmp/')
+
+
+class TestViewsDepends(ModuleTestCase):
+    """
+    Test Catalog
+    """
+
+    module = 'nereid_catalog'
 
 
 class TestCatalog(NereidTestCase):
@@ -209,18 +218,6 @@ class TestCatalog(NereidTestCase):
         """
         return self.templates.get(name)
 
-    def test_0005_test_view(self):
-        """
-        Test the views
-        """
-        test_view('nereid_catalog')
-
-    def test_0007_test_depends(self):
-        '''
-        Test Depends
-        '''
-        test_depends()
-
     def test_0010_get_price(self):
         """
         The price returned must be the list price of the product, no matter
@@ -413,7 +410,8 @@ def suite():
     "Catalog test suite"
     test_suite = unittest.TestSuite()
     test_suite.addTests(
-        unittest.TestLoader().loadTestsFromTestCase(TestCatalog)
+        unittest.TestLoader().loadTestsFromTestCase(TestViewsDepends),
+        unittest.TestLoader().loadTestsFromTestCase(TestCatalog),
     )
     return test_suite
 
