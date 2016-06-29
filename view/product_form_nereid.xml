@@ -11,7 +11,8 @@ this repository contains the full copyright notices and license terms. -->
             <field name="use_template_description"/>
     </xpath>
     <xpath expr="/form/separator[@name=&quot;description&quot;]"
-        position="replace">
+        position="replace_attributes">
+	<separator name='description' states="{'invisible': Bool(True)}"/>
     </xpath>
     <xpath expr="/form/field[@name=&quot;description&quot;]"
         position="replace">
