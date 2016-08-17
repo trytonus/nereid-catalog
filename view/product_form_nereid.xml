@@ -10,21 +10,11 @@ this repository contains the full copyright notices and license terms. -->
             <label name="use_template_description"/>
             <field name="use_template_description"/>
     </xpath>
-    <xpath expr="/form/separator[@name=&quot;description&quot;]"
-        position="replace">
-    </xpath>
-    <xpath expr="/form/field[@name=&quot;description&quot;]"
-        position="replace">
+    <xpath expr="//field[@name='description']" position="after">
+            <separator name="long_description"/>
+            <field name="long_description"/>
     </xpath>
     <xpath expr="/form/notebook" position="inside">
-        <page string="Description" id="desc">
-            <group col="2" colspan="6" yexpand="1" yfill="1" id="product_description">
-                <separator name="description"/>
-                <separator name="long_description"/>
-                <field name="description" />
-                <field name="long_description"/>
-            </group>
-        </page>
         <page string="E-Commerce Details" id="ecomm_det">
             <label name="uri"/>
             <field name="uri"/>
