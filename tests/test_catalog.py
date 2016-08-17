@@ -6,10 +6,9 @@ from lxml import objectify
 from nereid import render_template
 import trytond.tests.test_tryton
 from trytond.tests.test_tryton import (
-    POOL, USER, DB_NAME, CONTEXT, ModuleTestCase
+    POOL, USER, ModuleTestCase, with_transaction
 )
 from nereid.testing import NereidTestCase
-from trytond.transaction import Transaction
 from trytond.config import config
 
 config.set('database', 'path', '/tmp/')
@@ -87,7 +86,7 @@ class TestCatalog(NereidTestCase):
         }])
         guest_user, = self.NereidUser.create([{
             'party': party2.id,
-            'display_name': 'Guest User',
+            'name': 'Guest User',
             'email': 'guest@openlabs.co.in',
             'password': 'password',
             'company': company.id,
@@ -97,7 +96,7 @@ class TestCatalog(NereidTestCase):
         }])
         self.registered_user, = self.NereidUser.create([{
             'party': party3.id,
-            'display_name': 'Registered User',
+            'name': 'Registered User',
             'email': 'email@example.com',
             'password': 'password',
             'company': company.id,
@@ -129,7 +128,7 @@ class TestCatalog(NereidTestCase):
         self._create_product_template(
             'product 1',
             [{
-                'category': self.category,
+                'categories': [('add', [self.category.id])],
                 'type': 'goods',
                 'list_price': Decimal('10'),
                 'cost_price': Decimal('5'),
@@ -139,7 +138,7 @@ class TestCatalog(NereidTestCase):
         self._create_product_template(
             'product 2',
             [{
-                'category': self.category2,
+                'categories': [('add', [self.category2.id])],
                 'type': 'goods',
                 'list_price': Decimal('20'),
                 'cost_price': Decimal('5'),
@@ -149,7 +148,7 @@ class TestCatalog(NereidTestCase):
         self._create_product_template(
             'product 3',
             [{
-                'category': self.category3,
+                'categories': [('add', [self.category3.id])],
                 'type': 'goods',
                 'list_price': Decimal('30'),
                 'cost_price': Decimal('5'),
@@ -159,7 +158,7 @@ class TestCatalog(NereidTestCase):
         self._create_product_template(
             'product 4',
             [{
-                'category': self.category,
+                'categories': [('add', [self.category.id])],
                 'type': 'goods',
                 'list_price': Decimal('30'),
                 'cost_price': Decimal('5'),
@@ -189,7 +188,7 @@ class TestCatalog(NereidTestCase):
         self.templates = {
             'home.jinja':
                 '''
-                {{request.nereid_website.get_currencies()}}
+                {{current_website.get_currencies()}}
                 {% for image in product.images %}
                 {{ image.name }}
                 {% endfor %}
@@ -218,119 +217,120 @@ class TestCatalog(NereidTestCase):
         """
         return self.templates.get(name)
 
+    @with_transaction()
     def test_0010_get_price(self):
         """
         The price returned must be the list price of the product, no matter
         the quantity
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
+        self.setup_defaults()
+        self.create_test_products()
+        app = self.get_app()
 
-            with app.test_client() as c:
-                rv = c.get('/product/product-1')
-                self.assertEqual(rv.data, '10')
+        with app.test_client() as c:
+            rv = c.get('/product/product-1')
+            self.assertEqual(rv.data, '10')
 
+    @with_transaction()
     def test_0020_list_view(self):
         """
         Call the render list method to get list of all products
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
+        self.setup_defaults()
+        self.create_test_products()
+        app = self.get_app()
 
-            with app.test_client() as c:
-                rv = c.get('/products')
-                self.assertEqual(rv.data, '|product 1||product 2||product 3|')
+        with app.test_client() as c:
+            rv = c.get('/products')
+            self.assertEqual(rv.data, '|product 1||product 2||product 3|')
 
+    @with_transaction()
     def test_0030_quick_search(self):
         """
         Check if quick search works
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
+        self.setup_defaults()
+        self.create_test_products()
+        app = self.get_app()
 
-            with app.test_client() as c:
-                rv = c.get('/search?q=product')
-                self.assertEqual(rv.data, '|product 1||product 2||product 3|')
+        with app.test_client() as c:
+            rv = c.get('/search?q=product')
+            self.assertEqual(rv.data, '|product 1||product 2||product 3|')
 
+    @with_transaction()
     def test_0040_product_sitemap_index(self):
         """
         Assert that the sitemap index returns 1 result
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
+        self.setup_defaults()
+        self.create_test_products()
+        app = self.get_app()
 
-            with app.test_client() as c:
-                rv = c.get('/sitemaps/product-index.xml')
-                xml = objectify.fromstring(rv.data)
-                self.assertTrue(xml.tag.endswith('sitemapindex'))
-                self.assertEqual(len(xml.getchildren()), 1)
+        with app.test_client() as c:
+            rv = c.get('/sitemaps/product-index.xml')
+            xml = objectify.fromstring(rv.data)
+            self.assertTrue(xml.tag.endswith('sitemapindex'))
+            self.assertEqual(len(xml.getchildren()), 1)
 
-                self.assertEqual(
-                    xml.sitemap.loc.pyval.split('localhost', 1)[-1],
-                    '/sitemaps/product-1.xml'
-                )
+            self.assertEqual(
+                xml.sitemap.loc.pyval.split('localhost', 1)[-1],
+                '/sitemaps/product-1.xml'
+            )
 
-                rv = c.get('/sitemaps/product-1.xml')
-                xml = objectify.fromstring(rv.data)
-                self.assertTrue(xml.tag.endswith('urlset'))
-                self.assertEqual(len(xml.getchildren()), 3)
+            rv = c.get('/sitemaps/product-1.xml')
+            xml = objectify.fromstring(rv.data)
+            self.assertTrue(xml.tag.endswith('urlset'))
+            self.assertEqual(len(xml.getchildren()), 3)
 
+    @with_transaction()
     def test_0060_get_recent_products(self):
         """
         Get the recent products list
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app(
-                CACHE_TYPE='werkzeug.contrib.cache.SimpleCache'
-            )
+        self.setup_defaults()
+        self.create_test_products()
+        app = self.get_app(
+            CACHE_TYPE='werkzeug.contrib.cache.SimpleCache'
+        )
 
-            with app.test_client() as c:
-                rv = c.get('/products/+recent')
-                self.assertEqual(json.loads(rv.data)['products'], [])
+        with app.test_client() as c:
+            rv = c.get('/products/+recent')
+            self.assertEqual(json.loads(rv.data)['products'], [])
 
-                rv = c.get('/product/product-1')
-                rv = c.get('/products/+recent')
-                self.assertEqual(len(json.loads(rv.data)['products']), 1)
+            rv = c.get('/product/product-1')
+            rv = c.get('/products/+recent')
+            self.assertEqual(len(json.loads(rv.data)['products']), 1)
 
-                rv = c.post('/products/+recent', data={'product_id': 2})
-                self.assertEqual(len(json.loads(rv.data)['products']), 2)
-                rv = c.get('/products/+recent')
-                self.assertEqual(len(json.loads(rv.data)['products']), 2)
+            rv = c.post('/products/+recent', data={'product_id': 2})
+            self.assertEqual(len(json.loads(rv.data)['products']), 2)
+            rv = c.get('/products/+recent')
+            self.assertEqual(len(json.loads(rv.data)['products']), 2)
 
+    @with_transaction()
     def test_0070_displayed_on_eshop(self):
         """Ensure only displayed_on_eshop products are displayed on the site
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
+        self.setup_defaults()
+        self.create_test_products()
+        app = self.get_app()
 
-            with app.test_client() as c:
-                rv = c.get('/product/product-4')
-                self.assertEqual(rv.status_code, 404)
+        with app.test_client() as c:
+            rv = c.get('/product/product-4')
+            self.assertEqual(rv.status_code, 404)
 
+    @with_transaction()
     def test_0080_render_product_by_category(self):
         """Render product using user friendly paths.
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
-            app = self.get_app()
+        self.setup_defaults()
+        self.create_test_products()
+        app = self.get_app()
 
-            with app.test_client() as c:
-                rv = c.get('/product/category/sub-category/product-1')
-                self.assertEqual(rv.status_code, 200)
+        with app.test_client() as c:
+            rv = c.get('/product/category/sub-category/product-1')
+            self.assertEqual(rv.status_code, 200)
 
+    @with_transaction()
     def test_0090_products_displayed_on_eshop(self):
         """
         Test for the products_displayed_on_eshop function fields
@@ -338,37 +338,37 @@ class TestCatalog(NereidTestCase):
         ProductTemplate = POOL.get('product.template')
         Uom = POOL.get('product.uom')
 
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
+        self.setup_defaults()
 
-            unit, = Uom.search([('name', '=', u'Unit')])
+        unit, = Uom.search([('name', '=', u'Unit')])
 
-            # Create templates with 2 displayed on eshop and 1 not
-            template1, = ProductTemplate.create([{
-                'name': 'Product Template 1',
-                'type': 'goods',
-                'list_price': Decimal('10'),
-                'cost_price': Decimal('5'),
-                'default_uom': unit,
-                'products': [(
-                    'create', [
-                        {
-                            'uri': 'product-1-variant-1',
-                            'displayed_on_eshop': True,
-                        }, {
-                            'uri': 'product-1-variant-2',
-                            'displayed_on_eshop': True,
-                        }, {
-                            'uri': 'product-1-variant-3',
-                            'displayed_on_eshop': False,
-                        },
-                    ]
-                )]
-            }])
+        # Create templates with 2 displayed on eshop and 1 not
+        template1, = ProductTemplate.create([{
+            'name': 'Product Template 1',
+            'type': 'goods',
+            'list_price': Decimal('10'),
+            'cost_price': Decimal('5'),
+            'default_uom': unit,
+            'products': [(
+                'create', [
+                    {
+                        'uri': 'product-1-variant-1',
+                        'displayed_on_eshop': True,
+                    }, {
+                        'uri': 'product-1-variant-2',
+                        'displayed_on_eshop': True,
+                    }, {
+                        'uri': 'product-1-variant-3',
+                        'displayed_on_eshop': False,
+                    },
+                ]
+            )]
+        }])
 
-            self.assertEqual(len(template1.products_displayed_on_eshop), 2)
-            self.assertEqual(len(template1.products), 3)
+        self.assertEqual(len(template1.products_displayed_on_eshop), 2)
+        self.assertEqual(len(template1.products), 3)
 
+    @with_transaction()
     def test_0100_product_images(self):
         """
         Test for adding product images
@@ -378,32 +378,31 @@ class TestCatalog(NereidTestCase):
         StaticFile = POOL.get("nereid.static.file")
         Media = POOL.get('product.media')
 
-        with Transaction().start(DB_NAME, USER, CONTEXT):
-            self.setup_defaults()
-            self.create_test_products()
+        self.setup_defaults()
+        self.create_test_products()
 
-            folder, = StaticFolder.create([{
-                'name': 'Test'
-            }])
-            file_buffer = buffer('test-content')
-            file, = StaticFile.create([{
-                'name': 'test.png',
-                'folder': folder.id,
-                'file_binary': file_buffer
-            }])
+        folder, = StaticFolder.create([{
+            'name': 'Test'
+        }])
+        file_buffer = buffer('test-content')
+        file, = StaticFile.create([{
+            'name': 'test.png',
+            'folder': folder.id,
+            'file_binary': file_buffer
+        }])
 
-            product, = Product.search([], limit=1)
+        product, = Product.search([], limit=1)
 
-            Media.create([{
-                'product': product.id,
-                'template': product.template.id,
-                'static_file': file.id,
-            }])
+        Media.create([{
+            'product': product.id,
+            'template': product.template.id,
+            'static_file': file.id,
+        }])
 
-            app = self.get_app()
-            with app.test_request_context('/'):
-                home_template = render_template('home.jinja', product=product)
-                self.assertTrue(file.name in home_template)
+        app = self.get_app()
+        with app.test_request_context('/'):
+            home_template = render_template('home.jinja', product=product)
+            self.assertTrue(file.name in home_template)
 
 
 def suite():

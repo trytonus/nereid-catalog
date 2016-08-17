@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from collections import deque
-from sql import Table, Literal
 
 from nereid import render_template, route
 from nereid.globals import session, request, current_app
 from nereid.helpers import slugify, url_for
-from nereid import jsonify, Markup
+from nereid import jsonify, Markup, current_locale
 from nereid.contrib.pagination import Pagination
 from nereid.contrib.sitemap import SitemapIndex, SitemapSection
 from werkzeug.exceptions import NotFound
@@ -13,9 +12,7 @@ from flask.ext.babel import format_currency
 
 from trytond.model import ModelSQL, ModelView, fields
 from trytond.pyson import Eval, Not, Bool
-from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
-from trytond import backend
 from sql import Null
 
 __all__ = [
@@ -46,37 +43,6 @@ class ProductMedia(ModelSQL, ModelView):
         super(ProductMedia, cls).__setup__()
 
         cls._order.insert(0, ('sequence', 'ASC'))
-
-    @classmethod
-    def __register__(cls, module_name):
-        TableHandler = backend.get('TableHandler')
-        cursor = Transaction().cursor
-
-        super(ProductMedia, cls).__register__(module_name)
-
-        media_table = cls.__table__()
-
-        if TableHandler.table_exist(cursor, 'product_product_imageset'):
-            # Migrate data from ProductImageSet table to ProductMedia table
-            imageset_table = Table('product_product_imageset')
-
-            cursor.execute(*media_table.insert(
-                columns=[
-                    media_table.sequence,
-                    media_table.product, media_table.template,
-                    media_table.static_file,
-                ],
-                values=imageset_table.select(
-                    Literal(10),
-                    imageset_table.product, imageset_table.template,
-                    imageset_table.image
-                )
-            ))
-
-            TableHandler.drop_table(
-                cursor, 'product.product.imageset', 'product_product_imageset',
-                cascade=True
-            )
 
     @staticmethod
     def default_sequence():
@@ -222,18 +188,6 @@ class Product:
         })
         cls.per_page = 12
 
-    @classmethod
-    def __register__(cls, module_name):
-        TableHandler = backend.get('TableHandler')
-        cursor = Transaction().cursor
-        table = TableHandler(cursor, cls, module_name)
-
-        # Drop contraint for Unique URI on database
-        # Now using validation method for that purpose
-        table.drop_constraint('uri_uniq')
-
-        super(Product, cls).__register__(module_name)
-
     @staticmethod
     def default_displayed_on_eshop():
         return False
@@ -338,7 +292,7 @@ class Product:
                     product_val[field] = getattr(product, field)
                 product_val['sale_price'] = format_currency(
                     product.sale_price(),
-                    request.nereid_currency.code
+                    current_locale.currency.code
                 )
                 response.append(product_val)
 
