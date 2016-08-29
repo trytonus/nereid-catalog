@@ -19,7 +19,6 @@ __all__ = [
     'Product', 'ProductsRelated', 'ProductTemplate',
     'ProductMedia', 'ProductCategory'
 ]
-__metaclass__ = PoolMeta
 
 DEFAULT_STATE = {'invisible': Not(Bool(Eval('displayed_on_eshop')))}
 DEFAULT_STATE2 = {
@@ -50,6 +49,7 @@ class ProductMedia(ModelSQL, ModelView):
 
 
 class ProductTemplate:
+    __metaclass__ = PoolMeta
     __name__ = "product.template"
 
     products_displayed_on_eshop = fields.Function(
@@ -94,6 +94,7 @@ class ProductTemplate:
 
 class Product:
     "Product extension for Nereid"
+    __metaclass__ = PoolMeta
     __name__ = "product.product"
 
     #: Decides the number of products that would be remebered.
@@ -500,6 +501,7 @@ class ProductsRelated(ModelSQL):
 
 
 class ProductCategory:
+    __metaclass__ = PoolMeta
     __name__ = 'product.category'
 
     @staticmethod
