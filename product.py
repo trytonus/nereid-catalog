@@ -36,6 +36,10 @@ class ProductMedia(ModelSQL, ModelView):
         "nereid.static.file", "Static File", required=True, select=True)
     product = fields.Many2One("product.product", "Product", select=True)
     template = fields.Many2One("product.template", "Template", select=True)
+    url = fields.Function(fields.Char("URL"), "get_url")
+
+    def get_url(self, name):
+        return self.static_file.url
 
     @classmethod
     def __setup__(cls):
