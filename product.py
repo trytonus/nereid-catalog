@@ -118,11 +118,7 @@ class Product:
 
     displayed_on_eshop = fields.Boolean('Displayed on E-Shop?', select=True)
     long_description = fields.Text('Long Description')
-    media = fields.One2Many(
-        "product.media", "product", "Media", states={
-            'invisible': Bool(Eval('use_template_images'))
-        }, depends=['use_template_images']
-    )
+    media = fields.One2Many("product.media", "product", "Media")
     images = fields.Function(
         fields.One2Many('nereid.static.file', None, 'Images'),
         getter='get_product_images'
@@ -139,7 +135,6 @@ class Product:
         fields.Many2One('nereid.static.file', 'Image'), 'get_default_image',
     )
     use_template_description = fields.Boolean("Use template's description")
-    use_template_images = fields.Boolean("Use template's images")
 
     @classmethod
     def view_attributes(cls):
@@ -208,10 +203,6 @@ class Product:
 
     @staticmethod
     def default_use_template_description():
-        return True
-
-    @staticmethod
-    def default_use_template_images():
         return True
 
     @classmethod
@@ -480,12 +471,12 @@ class Product:
     def get_images(self):
         """
         Get images of product variant.
-        If the product is set to use the template's images, then
-        the template images is sent back.
+        Fallback to template's images if there are no images
+        for product.
         """
-        if self.use_template_images:
-            return self.template.images
-        return self.images
+        if self.images:
+            return self.images
+        return self.template.images
 
 
 class ProductsRelated(ModelSQL):

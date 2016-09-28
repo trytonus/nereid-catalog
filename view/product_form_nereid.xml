@@ -18,8 +18,6 @@ this repository contains the full copyright notices and license terms. -->
         <page string="E-Commerce Details" id="ecomm_det">
             <label name="uri"/>
             <field name="uri"/>
-            <label name="use_template_images"/>
-            <field name="use_template_images"/>
             <field name="media" colspan="4"/>
         </page>
         <page string="Related Products" col="4" id="related_products">
