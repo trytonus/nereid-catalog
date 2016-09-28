@@ -264,9 +264,6 @@ class TestProduct(NereidTestCase):
     def test0030_get_variant_images(self):
         """
         Test to get variant images.
-
-        If boolean field use_template_images is true return images
-        of product template else return images of variant
         """
         Product = POOL.get('product.product')
         StaticFolder = POOL.get("nereid.static.folder")
@@ -309,16 +306,16 @@ class TestProduct(NereidTestCase):
 
         product, = product_template.products
 
+        # There are no images for product so, it should return images
+        # from template
+        self.assertEqual(product.get_images()[0].id, file.id)
+
         Product.write([product], {
             'media': [('create', [{
                 'static_file': file1.id,
             }])]
         })
-
-        self.assertEqual(product.get_images()[0].id, file.id)
-        Product.write([product], {
-            'use_template_images': False,
-        })
+        # As the product now has images, this image should be returned
         self.assertEqual(product.get_images()[0].id, file1.id)
 
     @with_transaction()
