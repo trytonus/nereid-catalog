@@ -175,7 +175,8 @@ class Product:
         """
         Returns default product image if any.
         """
-        return self.images[0].id if self.images else None
+        images = self.images or self.template.images
+        return images[0].id if images else None
 
     @classmethod
     def __setup__(cls):
