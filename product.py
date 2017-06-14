@@ -465,6 +465,8 @@ class Product:
         """
         product_images = []
         for media in self.media:
+            if not media.static_file.mimetype:
+                continue
             if 'image' in media.static_file.mimetype:
                 product_images.append(media.static_file.id)
         return product_images
