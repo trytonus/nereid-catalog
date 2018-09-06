@@ -154,10 +154,11 @@ class Product:
         if default is None:
             default = {}
         default = default.copy()
+        default['displayed_on_eshop'] = False
 
         duplicate_products = []
         for index, product in enumerate(products, start=1):
-            if product.displayed_on_eshop:
+            if product.uri:
                 default['uri'] = "%s-copy-%d" % (product.uri, index)
 
             duplicate_products.extend(
