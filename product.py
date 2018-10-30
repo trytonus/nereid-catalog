@@ -172,12 +172,16 @@ class Product:
         super(Product, cls).validate(products)
         cls.check_uri_uniqueness(products)
 
-    def get_default_image(self, name):
+    @classmethod
+    def get_default_image(cls, products, name):
         """
         Returns default product image if any.
         """
-        images = self.images or self.template.images
-        return images[0].id if images else None
+        res = {}
+        for product in products:
+            images = product.images or product.template.images
+            res[product.id] = images[0].id if images else None
+        return res
 
     @classmethod
     def __setup__(cls):
