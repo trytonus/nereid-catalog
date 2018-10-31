@@ -172,12 +172,16 @@ class Product:
         super(Product, cls).validate(products)
         cls.check_uri_uniqueness(products)
 
-    def get_default_image(self, name):
+    @classmethod
+    def get_default_image(cls, products, name):
         """
         Returns default product image if any.
         """
-        images = self.images or self.template.images
-        return images[0].id if images else None
+        res = {}
+        for product in products:
+            images = product.images or product.template.images
+            res[product.id] = images[0].id if images else None
+        return res
 
     @classmethod
     def __setup__(cls):
@@ -460,17 +464,21 @@ class Product:
             description = self.description
         return Markup(description or '')
 
-    def get_product_images(self, name=None):
+    @classmethod
+    def get_product_images(cls, products, name=None):
         """
         Getter for `images` function field
         """
-        product_images = []
-        for media in self.media:
-            if not media.static_file.mimetype:
-                continue
-            if 'image' in media.static_file.mimetype:
-                product_images.append(media.static_file.id)
-        return product_images
+        res = {}
+        for product in products:
+            product_images = []
+            for media in product.media:
+                if not media.static_file.mimetype:
+                    continue
+                if 'image' in media.static_file.mimetype:
+                    product_images.append(media.static_file.id)
+            res[product.id] = product_images
+        return res
 
     def get_images(self):
         """
